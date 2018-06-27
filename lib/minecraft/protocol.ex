@@ -5,12 +5,13 @@ defmodule Minecraft.Protocol do
   """
   use GenServer
   require Logger
-  alias Minecraft.Protocol.{Handler, Request}
+  alias Minecraft.Protocol.Handler
+  alias Minecraft.Packet
 
   @behaviour :ranch_protocol
 
   defmodule State do
-    defstruct socket: nil, transport: nil
+    defstruct [:current, :socket, :transport]
   end
 
   @impl true
@@ -21,7 +22,7 @@ defmodule Minecraft.Protocol do
 
   @impl true
   def init({ref, socket, transport, _protocol_opts}) do
-    state = %State{socket: socket, transport: transport}
+    state = %State{current: :handshaking, socket: socket, transport: transport}
 
     :ok = :ranch.accept_ack(ref)
     :ok = transport.setopts(socket, active: :once)
@@ -29,17 +30,17 @@ defmodule Minecraft.Protocol do
   end
 
   @impl true
-  def handle_info({:tcp, socket, packet}, %State{transport: transport} = state) do
-    {:ok, request} = Request.deserialize(packet)
-    {:ok, response} = Handler.handle(request)
-    :ok = transport.setopts(socket, active: :once)
-    :ok = transport.send(socket, response)
-    {:noreply, state}
+  def handle_info({:tcp, socket, packet}, state) do
+    {current, packet} = Packet.deserialize(packet, state.current)
+    {:ok, response} = Handler.handle(packet)
+    :ok = state.transport.setopts(socket, active: :once)
+    :ok = state.transport.send(socket, response)
+    {:noreply, %State{state | current: current}}
   end
 
-  def handle_info({:tcp_closed, socket}, %State{transport: transport} = state) do
+  def handle_info({:tcp_closed, socket}, state) do
     Logger.info(fn -> "Client disconnected." end)
-    :ok = transport.close(socket)
+    :ok = state.transport.close(socket)
     {:stop, :normal, state}
   end
 end
