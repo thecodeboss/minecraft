@@ -9,6 +9,7 @@ defmodule Minecraft.Protocol do
   alias Minecraft.Packet
 
   @behaviour :ranch_protocol
+  @type state :: :handshaking | :status | :login | :play
 
   defmodule State do
     defstruct [:current, :socket, :transport]
