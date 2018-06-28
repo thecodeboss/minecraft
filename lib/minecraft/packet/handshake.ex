@@ -1,6 +1,6 @@
 defmodule Minecraft.Packet.Handshake do
   alias Minecraft.Protocol
-  @protocol_1_12_2 340
+  @protocol_1_12_2 <<0xD4, 0x02>>
 
   @type packet_id :: 0
 
@@ -10,7 +10,7 @@ defmodule Minecraft.Packet.Handshake do
   @spec deserialize(packet_id, binary) :: {new_state :: Protocol.state(), packet :: term}
   def deserialize(
         0 = _packet_id,
-        <<@protocol_1_12_2::size(16), addr_size::size(8), _server_addr::binary-size(addr_size),
+        <<@protocol_1_12_2::binary, addr_size::size(8), _server_addr::binary-size(addr_size),
           _port::size(16), 1::size(8)>>
       ) do
     {:status, ""}
@@ -18,7 +18,7 @@ defmodule Minecraft.Packet.Handshake do
 
   def deserialize(
         0 = _packet_id,
-        <<@protocol_1_12_2::size(16), addr_size::size(8), _server_addr::binary-size(addr_size),
+        <<@protocol_1_12_2::binary, addr_size::size(8), _server_addr::binary-size(addr_size),
           _port::size(16), 2::size(8)>>
       ) do
     {:login, ""}
