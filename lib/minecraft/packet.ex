@@ -1,6 +1,9 @@
 defmodule Minecraft.Packet do
   use Bitwise
+  alias Minecraft.Packet.Client
   alias Minecraft.Packet.Handshake
+  alias Minecraft.Packet.Server
+  alias Minecraft.Packet.Status
 
   @type varint :: -2_147_483_648..2_147_483_647
   @type varlong :: -9_223_372_036_854_775_808..9_223_372_036_854_775_807
@@ -8,11 +11,54 @@ defmodule Minecraft.Packet do
   @doc """
   Given a raw binary packet, deserializes it into a `Packet` struct.
   """
-  @spec deserialize(binary, state :: atom) :: {new_state :: atom, packet :: term}
-  def deserialize(data, :handshaking) when is_binary(data) do
+  @spec deserialize(binary, state :: atom, type :: :client | :server) ::
+          {packet :: term, new_state :: atom, rest :: binary}
+  def deserialize(data, state, type \\ :client)
+
+  def deserialize(data, :handshaking, type) when is_binary(data) do
     {_packet_size, data} = decode_varint(data)
     {packet_id, data} = decode_varint(data)
-    Handshake.deserialize(packet_id, data)
+    Handshake.deserialize(packet_id, data, type)
+  end
+
+  def deserialize(data, :status, type) when is_binary(data) do
+    {_packet_size, data} = decode_varint(data)
+    {packet_id, data} = decode_varint(data)
+    Status.deserialize(packet_id, data, type)
+  end
+
+  @spec serialize(response :: struct) :: {:ok, binary} | {:error, term}
+  def serialize(%Client.Handshake{} = request) do
+    packet_binary = Handshake.serialize(request)
+    serialize(request.packet_id, packet_binary)
+  end
+
+  def serialize(%Client.Status.Request{} = request) do
+    packet_binary = Status.serialize(request)
+    serialize(request.packet_id, packet_binary)
+  end
+
+  def serialize(%Client.Status.Ping{} = request) do
+    packet_binary = Status.serialize(request)
+    serialize(request.packet_id, packet_binary)
+  end
+
+  def serialize(%Server.Status.Response{} = response) do
+    packet_binary = Status.serialize(response)
+    serialize(response.packet_id, packet_binary)
+  end
+
+  def serialize(%Server.Status.Pong{} = response) do
+    packet_binary = Status.serialize(response)
+    serialize(response.packet_id, packet_binary)
+  end
+
+  @spec serialize(packet_id :: integer, binary) :: {:ok, binary} | {:error, term}
+  def serialize(packet_id, packet_binary) do
+    packet_id = encode_varint(packet_id)
+    packet_size = encode_varint(byte_size(packet_binary) + byte_size(packet_id))
+    response = <<packet_size::binary, packet_id::binary, packet_binary::binary>>
+    {:ok, response}
   end
 
   @doc """

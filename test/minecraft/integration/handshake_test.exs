@@ -1,32 +1,29 @@
 defmodule Minecraft.HandshakeTest do
   use ExUnit.Case, async: true
-  alias Minecraft.Client
-  import Minecraft.Packet
-
-  @protocol_1_12_2 340
-  @protocol_1_12_2_v Minecraft.Packet.encode_varint(@protocol_1_12_2)
+  alias Minecraft.Packet.Client
+  alias Minecraft.Packet.Server
+  alias Minecraft.TestClient
 
   setup do
-    {:ok, client} = Client.start_link(port: 25565)
+    {:ok, client} = TestClient.start_link(port: 25565)
     %{client: client}
   end
 
   test "handshake", %{client: client} do
-    server_addr = "localhost"
-    port = 25565
+    packet = %Client.Handshake{server_addr: "localhost", server_port: 25565, next_state: :status}
+    assert :ok = TestClient.cast(client, packet)
+    assert :ok = TestClient.set_state(client, :status)
 
-    packet =
-      build_packet(
-        0x00,
-        <<@protocol_1_12_2_v::binary, encode_string(server_addr)::binary, port::16-unsigned, 1>>
-      )
+    assert {:ok, %Server.Status.Response{} = response} =
+             TestClient.send(client, %Client.Status.Request{})
 
-    assert "Not Implemented" = Client.send(client, packet)
-  end
+    assert Poison.decode!(response.json) == %{
+             "version" => %{"name" => "1.12.2", "protocol" => 340},
+             "players" => %{"max" => 20, "online" => 0, "sample" => []},
+             "description" => %{"text" => "Elixir Minecraft"}
+           }
 
-  defp build_packet(packet_id, data) do
-    packet_id = encode_varint(packet_id)
-    total_size = encode_varint(byte_size(data) + byte_size(packet_id))
-    <<total_size::binary, packet_id::binary, data::binary>>
+    assert {:ok, %Server.Status.Pong{payload: 12_345_678}} =
+             TestClient.send(client, %Client.Status.Ping{payload: 12_345_678})
   end
 end
