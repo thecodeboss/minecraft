@@ -1,43 +1,54 @@
 # Minecraft
 
-A Minecraft server implementation in Elixir. Until this reaches vestion 1.0, please do not consider it ready for running real Minecraft servers (unless you're adventurous).
+A Minecraft server implementation in Elixir. Until this reaches version 1.0, please do not consider it ready for running real Minecraft servers (unless you're adventurous).
 
 ## Minecraft Protocol
 
-The Minecraft Protocol is documented in [the Minecraft wiki](https://minecraft.gamepedia.com/Classic_server_protocoli).
+The Minecraft Protocol is documented on [wiki.vg](http://wiki.vg/Protocol). The current goal is to support version (1.12.2, protocol 340).
 
 ## To-do
 
+The following list of to-do items should be enough to be able to play on the server, at least to the most basic extent.
+
 ### General
 
-- [ ] Heartbeat
-- [ ] User Authentication
 - [ ] World Generation
 - [ ] World in-memory storage
 - [ ] World persistence on disk
 - [ ] Core server logic (this is a catch-all)
 
-### Client-server packets
+### Handshake Packets
 
-- [ ] Player Identification
-- [ ] Set Block
-- [ ] Position and Orientation
-- [ ] Message
+- [x] Client: Handshake
 
-### Server-client packets
+### Status Packets
 
-- [ ] Server identification
-- [ ] Ping
-- [ ] Level Initialize
-- [ ] Level Data Chunk
-- [ ] Level Finalize
-- [ ] Set Block
-- [ ] Spawn Player
-- [ ] *(optional)* Position and Orientation (player teleport)
-- [ ] *(optional)* Position and Orientation update
-- [ ] *(optional)* Position update
-- [ ] *(optional)* Orientation update
-- [ ] Despawn player
-- [ ] Message
-- [ ] Disconnect player
-- [ ] Update user type
+- [x] Client: Request
+- [x] Server: Response
+- [x] Client: Ping
+- [x] Server: Pong
+
+### Login Packets
+
+- [ ] Client: Login Start
+- [ ] Server: Encryption Request
+- [ ] Client: Encryption Response
+- [ ] *(optional)* Server: Set Compression
+- [ ] Server: Login Success
+- [ ] Server: Disconnect
+
+### Play Packets
+
+- [ ] Server: Join Game
+- [ ] Server: Spawn Position
+- [ ] Server: Player Abilities
+- [ ] Client: Client Settings
+- [ ] Server: Player Position and Look
+- [ ] Client: Teleport Confirm
+- [ ] Client: Player Position and Look
+- [ ] Client: Client Status
+- [ ] Server: Window Items
+- [ ] Server: Chunk Data
+- [ ] Client: Player
+- [ ] Client: Player Position
+- [ ] Client: Player Look
