@@ -6,6 +6,15 @@ defmodule Minecraft.Server do
   @type server_opt :: {:max_connections, non_neg_integer()} | {:port, 0..65535}
   @type server_opts :: [server_opt]
 
+  @doc """
+  Returns a specification to start this module under a supervisor. See `Supervisor` for
+  more information.
+
+  Valid options are:
+    * `:max_connections` - The maximum number of connections this server can handle. Default
+      is 100.
+    * `:port` - Which port to start the server on. Default is 25565.
+  """
   @spec child_spec(server_opts) :: Supervisor.child_spec()
   def child_spec(opts \\ []) do
     %{

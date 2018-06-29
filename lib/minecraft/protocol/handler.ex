@@ -1,8 +1,16 @@
 defmodule Minecraft.Protocol.Handler do
+  @moduledoc """
+  Server-side handler for responding to client packets.
+  """
   alias Minecraft.Packet.Client
   alias Minecraft.Packet.Server
 
-  @spec handle(struct) :: {:ok, :noreply | struct} | {:error, :unknown_packet}
+  @doc """
+  Handles a packet from a client, and returns either a response packet, or `{:ok, :noreply}`.
+  """
+  @spec handle(packet :: struct) :: {:ok, :noreply | struct} | {:error, :unknown_packet}
+  def handle(packet)
+
   def handle(%Client.Handshake{}) do
     {:ok, :noreply}
   end

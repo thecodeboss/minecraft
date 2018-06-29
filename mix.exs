@@ -1,6 +1,8 @@
 defmodule Minecraft.MixProject do
   use Mix.Project
 
+  @project_url "https://github.com/thecodeboss/minecraft"
+
   def project do
     [
       app: :minecraft,
@@ -8,7 +10,19 @@ defmodule Minecraft.MixProject do
       elixir: "~> 1.6",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+
+      # URLs
+      source_url: @project_url,
+      homepage_url: @project_url,
+
+      # Docs
+      name: "Minecraft",
+      docs: [
+        # The main page in the docs
+        main: "README",
+        extras: ["README.md": [title: "Minecraft"]]
+      ]
     ]
   end
 
@@ -26,6 +40,7 @@ defmodule Minecraft.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:ex_doc, "~> 0.16", only: :dev, runtime: false},
       {:ranch, "~> 1.5"},
       {:poison, "~> 3.1"}
     ]

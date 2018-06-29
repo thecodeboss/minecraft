@@ -1,7 +1,7 @@
 defmodule Minecraft.Protocol do
   @moduledoc """
-  A ranch protocol implementation that forwards requests to the protocol
-  handler module.
+  A [`:ranch_protocol`](https://ninenines.eu/docs/en/ranch/1.5/guide/protocols/) implementation
+  that forwards requests to `Minecraft.Protocol.Handler`.
   """
   use GenServer
   require Logger
@@ -9,9 +9,14 @@ defmodule Minecraft.Protocol do
   alias Minecraft.Packet
 
   @behaviour :ranch_protocol
+
+  @typedoc """
+  The possible states a client/server can be in.
+  """
   @type state :: :handshaking | :status | :login | :play
 
   defmodule State do
+    @moduledoc false
     defstruct [:current, :socket, :transport, :client_ip]
   end
 

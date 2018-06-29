@@ -1,4 +1,7 @@
 defmodule Minecraft.Packet.Status do
+  @moduledoc """
+  Serialization and deserialization routines for status packets.
+  """
   alias Minecraft.Packet.Client
   alias Minecraft.Packet.Server
   alias Minecraft.Protocol
@@ -36,6 +39,8 @@ defmodule Minecraft.Packet.Status do
   Serializes a status packet.
   """
   @spec serialize(packet :: struct) :: binary
+  def serialize(packet)
+
   def serialize(%Client.Status.Request{}) do
     ""
   end

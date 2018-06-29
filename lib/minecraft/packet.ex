@@ -1,4 +1,7 @@
 defmodule Minecraft.Packet do
+  @moduledoc """
+  Base serialization and deserialization routines for packets.
+  """
   use Bitwise
   alias Minecraft.Packet.Client
   alias Minecraft.Packet.Handshake
@@ -27,7 +30,10 @@ defmodule Minecraft.Packet do
     Status.deserialize(packet_id, data, type)
   end
 
-  @spec serialize(response :: struct) :: {:ok, binary} | {:error, term}
+  @doc """
+  Serializes a packet into binary data.
+  """
+  @spec serialize(packet :: struct) :: {:ok, binary} | {:error, term}
   def serialize(%Client.Handshake{} = request) do
     packet_binary = Handshake.serialize(request)
     serialize(request.packet_id, packet_binary)
@@ -53,6 +59,15 @@ defmodule Minecraft.Packet do
     serialize(response.packet_id, packet_binary)
   end
 
+  @doc """
+  Serializes a packet binary into the standard packet format:
+
+  | Field     | Type   | Description                                     |
+  | --------- | ------ | ----------------------------------------------- |
+  | Length    | VarInt | Length of packet data + length of the packet ID |
+  | Packet ID | VarInt |                                                 |
+  | Data      | Binary | The serialized packet data                      |
+  """
   @spec serialize(packet_id :: integer, binary) :: {:ok, binary} | {:error, term}
   def serialize(packet_id, packet_binary) do
     packet_id = encode_varint(packet_id)
@@ -70,18 +85,18 @@ defmodule Minecraft.Packet do
     decode_varint(data, 0, 0)
   end
 
-  def decode_varint(<<1::1, value::7, rest::binary>>, num_read, acc) when num_read < 5 do
+  defp decode_varint(<<1::1, value::7, rest::binary>>, num_read, acc) when num_read < 5 do
     decode_varint(rest, num_read + 1, acc + (value <<< (7 * num_read)))
   end
 
-  def decode_varint(<<0::1, value::7, rest::binary>>, num_read, acc) do
+  defp decode_varint(<<0::1, value::7, rest::binary>>, num_read, acc) do
     result = acc + (value <<< (7 * num_read))
     <<result::32-signed>> = <<result::32-unsigned>>
     {result, rest}
   end
 
-  def decode_varint(_, num_read, _) when num_read >= 5, do: {:error, :too_long}
-  def decode_varint("", _, _), do: {:error, :too_short}
+  defp decode_varint(_, num_read, _) when num_read >= 5, do: {:error, :too_long}
+  defp decode_varint("", _, _), do: {:error, :too_short}
 
   @doc """
   Decodes a variable-size long.
@@ -92,18 +107,18 @@ defmodule Minecraft.Packet do
     decode_varlong(data, 0, 0)
   end
 
-  def decode_varlong(<<1::1, value::7, rest::binary>>, num_read, acc) when num_read < 10 do
+  defp decode_varlong(<<1::1, value::7, rest::binary>>, num_read, acc) when num_read < 10 do
     decode_varlong(rest, num_read + 1, acc + (value <<< (7 * num_read)))
   end
 
-  def decode_varlong(<<0::1, value::7, rest::binary>>, num_read, acc) do
+  defp decode_varlong(<<0::1, value::7, rest::binary>>, num_read, acc) do
     result = acc + (value <<< (7 * num_read))
     <<result::64-signed>> = <<result::64-unsigned>>
     {result, rest}
   end
 
-  def decode_varlong(_, num_read, _) when num_read >= 10, do: {:error, :too_long}
-  def decode_varlong("", _, _), do: {:error, :too_short}
+  defp decode_varlong(_, num_read, _) when num_read >= 10, do: {:error, :too_long}
+  defp decode_varlong("", _, _), do: {:error, :too_short}
 
   @doc """
   Decodes a string.
@@ -128,11 +143,11 @@ defmodule Minecraft.Packet do
     {:error, :too_large}
   end
 
-  def encode_varint(value, _, acc) when value <= 127 do
+  defp encode_varint(value, _, acc) when value <= 127 do
     <<acc::binary, 0::1, value::7>>
   end
 
-  def encode_varint(value, num_write, acc) when value > 127 and num_write < 5 do
+  defp encode_varint(value, num_write, acc) when value > 127 and num_write < 5 do
     encode_varint(value >>> 7, num_write + 1, <<acc::binary, 1::1, band(value, 0x7F)::7>>)
   end
 
