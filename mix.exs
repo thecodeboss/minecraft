@@ -20,7 +20,7 @@ defmodule Minecraft.MixProject do
       name: "Minecraft",
       docs: [
         # The main page in the docs
-        main: "README",
+        main: "readme",
         extras: ["README.md": [title: "Minecraft"]]
       ],
 

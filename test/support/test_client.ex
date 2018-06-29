@@ -53,7 +53,7 @@ defmodule Minecraft.TestClient do
     port = Keyword.get(opts, :port, 25565)
     tcp_opts = [:binary, active: false]
     {:ok, socket} = :gen_tcp.connect('localhost', port, tcp_opts)
-    {:ok, {socket, :handshaking}}
+    {:ok, {socket, :handshake}}
   end
 
   @impl true
@@ -63,7 +63,7 @@ defmodule Minecraft.TestClient do
 
     case :gen_tcp.recv(socket, 0) do
       {:ok, response} ->
-        {response_packet, _, ""} = Minecraft.Packet.deserialize(response, state, :server)
+        {response_packet, ""} = Minecraft.Packet.deserialize(response, state, :server)
         {:reply, {:ok, response_packet}, {socket, state}}
 
       {:error, _} = err ->
@@ -77,7 +77,7 @@ defmodule Minecraft.TestClient do
 
     case :gen_tcp.recv(socket, 0) do
       {:ok, response} ->
-        {response_packet, _, ""} = Minecraft.Packet.deserialize(response, state, :server)
+        {response_packet, ""} = Minecraft.Packet.deserialize(response, state, :server)
         {:reply, {:ok, response_packet}, {socket, state}}
 
       {:error, _} = err ->

@@ -5,20 +5,10 @@ defmodule Minecraft.Protocol do
   """
   use GenServer
   require Logger
+  alias Minecraft.Connection
   alias Minecraft.Protocol.Handler
-  alias Minecraft.Packet
 
   @behaviour :ranch_protocol
-
-  @typedoc """
-  The possible states a client/server can be in.
-  """
-  @type state :: :handshaking | :status | :login | :play
-
-  defmodule State do
-    @moduledoc false
-    defstruct [:current, :socket, :transport, :client_ip]
-  end
 
   @impl true
   def start_link(ref, socket, transport, protocol_opts) do
@@ -33,66 +23,57 @@ defmodule Minecraft.Protocol do
   @impl true
   def init({ref, socket, transport, _protocol_opts}) do
     :ok = :ranch.accept_ack(ref)
-    {:ok, {client_ip, _port}} = :inet.peername(socket)
-    client_ip = :inet.ntoa(client_ip)
-
-    state = %State{
-      current: :handshaking,
-      socket: socket,
-      transport: transport,
-      client_ip: client_ip
-    }
-
-    :ok = transport.setopts(socket, active: :once)
-    Logger.info(fn -> "Client #{client_ip} connected." end)
-    :gen_server.enter_loop(__MODULE__, [], state)
+    conn = Connection.init(socket, transport)
+    :gen_server.enter_loop(__MODULE__, [], conn)
   end
 
   @impl true
-  def handle_info({:tcp, socket, packet}, state) do
-    case Packet.deserialize(packet, state.current) do
-      {packet, current, rest} when is_binary(rest) ->
-        Logger.debug(fn -> "REQUEST: #{inspect(packet)}" end)
-
-        if byte_size(rest) > 0 do
-          send(self(), {:tcp, socket, rest})
-        end
-
-        handle_packet(packet, socket, current, state)
-
-      {:error, :invalid_packet} ->
-        Logger.error(fn -> "Received an invalid packet from client, closing connection." end)
-        {:stop, :normal, state}
-    end
+  def handle_info({:tcp, socket, data}, conn) do
+    conn
+    |> Connection.put_socket(socket)
+    |> Connection.put_data(data)
+    |> handle_conn()
   end
 
-  def handle_info({:tcp_closed, socket}, state) do
-    Logger.info(fn -> "Client #{state.client_ip} disconnected." end)
-    :ok = state.transport.close(socket)
-    {:stop, :normal, state}
+  def handle_info({:tcp_closed, socket}, conn) do
+    Logger.info(fn -> "Client #{conn.client_ip} disconnected." end)
+    :ok = conn.transport.close(socket)
+    {:stop, :normal, conn}
   end
 
   #
   # Helpers
   #
+  defp handle_conn(%Connection{data: ""} = conn) do
+    conn = Connection.continue(conn)
+    {:noreply, conn}
+  end
 
-  defp handle_packet(packet, socket, current, state) do
-    case Handler.handle(packet) do
-      {:ok, :noreply} ->
-        :ok = state.transport.setopts(socket, active: :once)
-        {:noreply, %State{state | current: current}}
+  defp handle_conn(%Connection{} = conn) do
+    case Connection.read_packet(conn) do
+      {:ok, packet, conn} ->
+        handle_packet(packet, conn)
 
-      {:ok, response_packet} ->
-        Logger.debug(fn -> "RESPONSE: #{inspect(response_packet)}" end)
-        {:ok, response} = Packet.serialize(response_packet)
-        :ok = state.transport.setopts(socket, active: :once)
-        :ok = state.transport.send(socket, response)
-        {:noreply, %State{state | current: current}}
+      {:error, conn} ->
+        conn = Connection.close(conn)
+        {:stop, :normal, conn}
+    end
+  end
 
-      err ->
+  defp handle_packet(packet, conn) do
+    case Handler.handle(packet, conn) do
+      {:ok, :noreply, conn} ->
+        handle_conn(conn)
+
+      {:ok, response, conn} ->
+        conn
+        |> Connection.send_response(response)
+        |> handle_conn()
+
+      {:error, _, conn} = err ->
         Logger.error(fn -> "#{__MODULE__} error: #{inspect(err)}" end)
-        :ok = state.transport.close(socket)
-        {:stop, :normal, state}
+        conn = Connection.close(conn)
+        {:stop, :normal, conn}
     end
   end
 end

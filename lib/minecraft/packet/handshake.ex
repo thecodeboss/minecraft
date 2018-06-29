@@ -3,7 +3,6 @@ defmodule Minecraft.Packet.Handshake do
   Serialization and deserialization routines for handshake packets.
   """
   alias Minecraft.Packet.Client
-  alias Minecraft.Protocol
   import Minecraft.Packet
 
   @type packet_id :: 0
@@ -12,8 +11,7 @@ defmodule Minecraft.Packet.Handshake do
   Deserializes a handshake packet.
   """
   @spec deserialize(packet_id, binary, type :: :client | :server) ::
-          {packet :: term, new_state :: Protocol.state(), rest :: binary}
-          | {:error, :invalid_packet}
+          {packet :: term, rest :: binary} | {:error, :invalid_packet}
   def deserialize(0 = _packet_id, data, :client = _type) do
     {protocol_version, rest} = decode_varint(data)
     {server_addr, rest} = decode_string(rest)
@@ -32,7 +30,7 @@ defmodule Minecraft.Packet.Handshake do
       next_state: next_state
     }
 
-    {packet, next_state, rest}
+    {packet, rest}
   end
 
   def deserialize(_, _, _) do

@@ -4,7 +4,6 @@ defmodule Minecraft.Packet.Status do
   """
   alias Minecraft.Packet.Client
   alias Minecraft.Packet.Server
-  alias Minecraft.Protocol
   import Minecraft.Packet
 
   @type packet_id :: 0..1
@@ -13,25 +12,24 @@ defmodule Minecraft.Packet.Status do
   Deserializes a status packet.
   """
   @spec deserialize(packet_id, binary, type :: :client | :server) ::
-          {packet :: term, new_state :: Protocol.state(), rest :: binary}
-          | {:error, :invalid_packet}
+          {packet :: term, rest :: binary} | {:error, :invalid_packet}
   def deserialize(0 = _packet_id, data, :client = _type) do
-    {%Client.Status.Request{}, :status, data}
+    {%Client.Status.Request{}, data}
   end
 
   def deserialize(1 = _packet_id, data, :client) do
     <<payload::64-signed, rest::binary>> = data
-    {%Client.Status.Ping{payload: payload}, :status, rest}
+    {%Client.Status.Ping{payload: payload}, rest}
   end
 
   def deserialize(0 = _packet_id, data, :server) do
     {json, rest} = decode_string(data)
-    {%Server.Status.Response{json: json}, :status, rest}
+    {%Server.Status.Response{json: json}, rest}
   end
 
   def deserialize(1 = _packet_id, data, :server) do
     <<payload::64-signed, rest::binary>> = data
-    {%Server.Status.Pong{payload: payload}, :status, rest}
+    {%Server.Status.Pong{payload: payload}, rest}
   end
 
   def deserialize(_, _, _) do

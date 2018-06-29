@@ -2,24 +2,30 @@ defmodule Minecraft.Protocol.Handler do
   @moduledoc """
   Server-side handler for responding to client packets.
   """
+  alias Minecraft.Connection
   alias Minecraft.Packet.Client
   alias Minecraft.Packet.Server
 
   @doc """
   Handles a packet from a client, and returns either a response packet, or `{:ok, :noreply}`.
   """
-  @spec handle(packet :: struct) :: {:ok, :noreply | struct} | {:error, :unknown_packet}
-  def handle(packet)
+  @spec handle(packet :: struct, Connection.t()) ::
+          {:ok, :noreply | struct, Connection.t()}
+          | {:error, :unsupported_protocol, Connection.t()}
+  def handle(%Client.Handshake{protocol_version: 340, next_state: next_state} = _packet, conn) do
+    conn =
+      conn
+      |> Connection.put_state(next_state)
+      |> Connection.put_protocol(340)
 
-  def handle(%Client.Handshake{protocol_version: 340}) do
-    {:ok, :noreply}
+    {:ok, :noreply, conn}
   end
 
-  def handle(%Client.Handshake{protocol_version: _}) do
-    {:error, :unsupported_protocol}
+  def handle(%Client.Handshake{protocol_version: _}, conn) do
+    {:error, :unsupported_protocol, conn}
   end
 
-  def handle(%Client.Status.Request{}) do
+  def handle(%Client.Status.Request{}, conn) do
     {:ok, json} =
       Poison.encode(%{
         version: %{name: "1.12.2", protocol: 340},
@@ -27,14 +33,10 @@ defmodule Minecraft.Protocol.Handler do
         description: %{text: "Elixir Minecraft"}
       })
 
-    {:ok, %Server.Status.Response{json: json}}
+    {:ok, %Server.Status.Response{json: json}, conn}
   end
 
-  def handle(%Client.Status.Ping{payload: payload}) do
-    {:ok, %Server.Status.Pong{payload: payload}}
-  end
-
-  def handle(_packet) do
-    {:error, :unknown_packet}
+  def handle(%Client.Status.Ping{payload: payload}, conn) do
+    {:ok, %Server.Status.Pong{payload: payload}, conn}
   end
 end
