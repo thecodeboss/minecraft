@@ -3,8 +3,13 @@
 [![Build Status](https://travis-ci.com/thecodeboss/minecraft.svg?branch=master)](https://travis-ci.com/thecodeboss/minecraft)
 [![Inline docs](http://inch-ci.org/github/thecodeboss/minecraft.svg)](http://inch-ci.org/github/thecodeboss/minecraft)
 [![Coverage Status](https://coveralls.io/repos/thecodeboss/minecraft/badge.svg?branch=master&service=github)](https://coveralls.io/github/thecodeboss/minecraft?branch=master)
+[![Hex.pm version](https://img.shields.io/hexpm/v/minecraft.svg?style=flat-square)](https://hex.pm/packages/minecraft)
+[![Hex.pm downloads](https://img.shields.io/hexpm/dt/minecraft.svg?style=flat-square)](https://hex.pm/packages/minecraft)
+[![License](https://img.shields.io/hexpm/l/minecraft.svg?style=flat-square)](https://hex.pm/packages/minecraft)
 
 A Minecraft server implementation in Elixir. Until this reaches version 1.0, please do not consider it ready for running real Minecraft servers (unless you're adventurous).
+
+You can view [the documentation on Hex](https://hexdocs.pm/minecraft/).
 
 ## Minecraft Protocol
 

@@ -1,6 +1,7 @@
 defmodule Minecraft.MixProject do
   use Mix.Project
 
+  @description "A Minecraft server implementation in Elixir."
   @project_url "https://github.com/thecodeboss/minecraft"
 
   def project do
@@ -15,6 +16,10 @@ defmodule Minecraft.MixProject do
       # URLs
       source_url: @project_url,
       homepage_url: @project_url,
+
+      # Hex
+      description: @description,
+      package: package(),
 
       # Docs
       name: "Minecraft",
@@ -54,6 +59,15 @@ defmodule Minecraft.MixProject do
       {:inch_ex, only: :docs},
       {:ranch, "~> 1.5"},
       {:poison, "~> 3.1"}
+    ]
+  end
+
+  defp package do
+    [
+      maintainers: ["Michael Oliver"],
+      licenses: ["MIT"],
+      links: %{"GitHub" => @project_url},
+      files: ~w(README.md LICENSE mix.exs lib)
     ]
   end
 end
