@@ -5,8 +5,6 @@ defmodule Minecraft.Packet.Handshake do
   alias Minecraft.Packet.Client
   alias Minecraft.Protocol
   import Minecraft.Packet
-  @protocol_1_12_2 340
-  @protocol_1_12_2_v Minecraft.Packet.encode_varint(@protocol_1_12_2)
 
   @type packet_id :: 0
 
@@ -15,9 +13,9 @@ defmodule Minecraft.Packet.Handshake do
   """
   @spec deserialize(packet_id, binary, type :: :client | :server) ::
           {packet :: term, new_state :: Protocol.state(), rest :: binary}
-  def deserialize(packet_id, data, type \\ :client)
-
-  def deserialize(0, <<@protocol_1_12_2_v::binary, rest::binary>>, :client) do
+          | {:error, :invalid_packet}
+  def deserialize(0 = _packet_id, data, :client = _type) do
+    {protocol_version, rest} = decode_varint(data)
     {server_addr, rest} = decode_string(rest)
     <<server_port::size(16), next_state::size(8), rest::binary>> = rest
 
@@ -28,12 +26,17 @@ defmodule Minecraft.Packet.Handshake do
       end
 
     packet = %Client.Handshake{
+      protocol_version: protocol_version,
       server_addr: server_addr,
       server_port: server_port,
       next_state: next_state
     }
 
     {packet, next_state, rest}
+  end
+
+  def deserialize(_, _, _) do
+    {:error, :invalid_packet}
   end
 
   @doc """

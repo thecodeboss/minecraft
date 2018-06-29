@@ -26,6 +26,10 @@ defmodule Minecraft.Protocol do
     {:ok, pid}
   end
 
+  #
+  # Server Callbacks
+  #
+
   @impl true
   def init({ref, socket, transport, _protocol_opts}) do
     :ok = :ranch.accept_ack(ref)
@@ -46,13 +50,33 @@ defmodule Minecraft.Protocol do
 
   @impl true
   def handle_info({:tcp, socket, packet}, state) do
-    {packet, current, rest} = Packet.deserialize(packet, state.current)
-    Logger.debug(fn -> "REQUEST: #{inspect(packet)}" end)
+    case Packet.deserialize(packet, state.current) do
+      {packet, current, rest} when is_binary(rest) ->
+        Logger.debug(fn -> "REQUEST: #{inspect(packet)}" end)
 
-    if byte_size(rest) > 0 do
-      send(self(), {:tcp, socket, rest})
+        if byte_size(rest) > 0 do
+          send(self(), {:tcp, socket, rest})
+        end
+
+        handle_packet(packet, socket, current, state)
+
+      {:error, :invalid_packet} ->
+        Logger.error(fn -> "Received an invalid packet from client, closing connection." end)
+        {:stop, :normal, state}
     end
+  end
 
+  def handle_info({:tcp_closed, socket}, state) do
+    Logger.info(fn -> "Client #{state.client_ip} disconnected." end)
+    :ok = state.transport.close(socket)
+    {:stop, :normal, state}
+  end
+
+  #
+  # Helpers
+  #
+
+  defp handle_packet(packet, socket, current, state) do
     case Handler.handle(packet) do
       {:ok, :noreply} ->
         :ok = state.transport.setopts(socket, active: :once)
@@ -70,11 +94,5 @@ defmodule Minecraft.Protocol do
         :ok = state.transport.close(socket)
         {:stop, :normal, state}
     end
-  end
-
-  def handle_info({:tcp_closed, socket}, state) do
-    Logger.info(fn -> "Client #{state.client_ip} disconnected." end)
-    :ok = state.transport.close(socket)
-    {:stop, :normal, state}
   end
 end

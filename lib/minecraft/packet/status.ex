@@ -14,10 +14,9 @@ defmodule Minecraft.Packet.Status do
   """
   @spec deserialize(packet_id, binary, type :: :client | :server) ::
           {packet :: term, new_state :: Protocol.state(), rest :: binary}
-  def deserialize(packet_id, data, type \\ :client)
-
-  def deserialize(0 = _packet_id, rest, :client) do
-    {%Client.Status.Request{}, :status, rest}
+          | {:error, :invalid_packet}
+  def deserialize(0 = _packet_id, data, :client = _type) do
+    {%Client.Status.Request{}, :status, data}
   end
 
   def deserialize(1 = _packet_id, data, :client) do
@@ -33,6 +32,10 @@ defmodule Minecraft.Packet.Status do
   def deserialize(1 = _packet_id, data, :server) do
     <<payload::64-signed, rest::binary>> = data
     {%Server.Status.Pong{payload: payload}, :status, rest}
+  end
+
+  def deserialize(_, _, _) do
+    {:error, :invalid_packet}
   end
 
   @doc """

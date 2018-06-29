@@ -2,6 +2,7 @@
     "skip_files": [
         "lib/minecraft/packet/client/handshake.ex",
         "lib/minecraft/packet/client/status.ex",
-        "lib/minecraft/packet/server/status.ex"
+        "lib/minecraft/packet/server/status.ex",
+        "test/support"
     ]
 }

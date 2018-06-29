@@ -26,4 +26,19 @@ defmodule Minecraft.HandshakeTest do
     assert {:ok, %Server.Status.Pong{payload: 12_345_678}} =
              TestClient.send(client, %Client.Status.Ping{payload: 12_345_678})
   end
+
+  test "invalid protocol", %{client: client} do
+    packet = %Client.Handshake{
+      protocol_version: 123,
+      server_addr: "localhost",
+      server_port: 25565,
+      next_state: :status
+    }
+
+    assert {:error, :closed} = TestClient.send(client, packet)
+  end
+
+  test "invalid packet results in socket closure", %{client: client} do
+    assert {:error, :closed} = TestClient.send_raw(client, <<1, 2, 3>>)
+  end
 end

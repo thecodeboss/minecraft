@@ -17,11 +17,19 @@ defmodule Minecraft.TestClient do
   end
 
   @doc """
-  Sends a message to the server.
+  Sends a packet to the server.
   """
-  @spec send(pid, struct) :: {:ok, response :: term} | {:error, term}
+  @spec send(pid, packet :: struct) :: {:ok, response :: term} | {:error, term}
   def send(pid, packet) do
     GenServer.call(pid, {:send, packet})
+  end
+
+  @doc """
+  Sends raw data to the server.
+  """
+  @spec send_raw(pid, data :: binary) :: {:ok, response :: term} | {:error, term}
+  def send_raw(pid, data) do
+    GenServer.call(pid, {:send_raw, data})
   end
 
   @doc """
@@ -52,9 +60,29 @@ defmodule Minecraft.TestClient do
   def handle_call({:send, packet}, _from, {socket, state}) do
     {:ok, request} = Minecraft.Packet.serialize(packet)
     :ok = :gen_tcp.send(socket, request)
-    {:ok, response} = :gen_tcp.recv(socket, 0)
-    {response_packet, _, ""} = Minecraft.Packet.deserialize(response, state, :server)
-    {:reply, {:ok, response_packet}, {socket, state}}
+
+    case :gen_tcp.recv(socket, 0) do
+      {:ok, response} ->
+        {response_packet, _, ""} = Minecraft.Packet.deserialize(response, state, :server)
+        {:reply, {:ok, response_packet}, {socket, state}}
+
+      {:error, _} = err ->
+        {:stop, :normal, err, {socket, state}}
+    end
+  end
+
+  @impl true
+  def handle_call({:send_raw, data}, _from, {socket, state}) do
+    :ok = :gen_tcp.send(socket, data)
+
+    case :gen_tcp.recv(socket, 0) do
+      {:ok, response} ->
+        {response_packet, _, ""} = Minecraft.Packet.deserialize(response, state, :server)
+        {:reply, {:ok, response_packet}, {socket, state}}
+
+      {:error, _} = err ->
+        {:stop, :normal, err, {socket, state}}
+    end
   end
 
   def handle_call({:set_state, state}, _from, {socket, _old_state}) do

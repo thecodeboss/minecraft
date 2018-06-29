@@ -15,7 +15,7 @@ defmodule Minecraft.Packet do
   Given a raw binary packet, deserializes it into a `Packet` struct.
   """
   @spec deserialize(binary, state :: atom, type :: :client | :server) ::
-          {packet :: term, new_state :: atom, rest :: binary}
+          {packet :: term, new_state :: atom, rest :: binary} | {:error, :invalid_packet}
   def deserialize(data, state, type \\ :client)
 
   def deserialize(data, :handshaking, type) when is_binary(data) do

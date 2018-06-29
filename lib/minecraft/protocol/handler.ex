@@ -11,8 +11,12 @@ defmodule Minecraft.Protocol.Handler do
   @spec handle(packet :: struct) :: {:ok, :noreply | struct} | {:error, :unknown_packet}
   def handle(packet)
 
-  def handle(%Client.Handshake{}) do
+  def handle(%Client.Handshake{protocol_version: 340}) do
     {:ok, :noreply}
+  end
+
+  def handle(%Client.Handshake{protocol_version: _}) do
+    {:error, :unsupported_protocol}
   end
 
   def handle(%Client.Status.Request{}) do
