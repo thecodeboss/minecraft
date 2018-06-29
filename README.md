@@ -1,6 +1,7 @@
 # Minecraft
 
 [![Build Status](https://travis-ci.com/thecodeboss/minecraft.svg?branch=master)](https://travis-ci.com/thecodeboss/minecraft)
+[![Inline docs](http://inch-ci.org/github/thecodeboss/minecraft.svg)](http://inch-ci.org/github/thecodeboss/minecraft)
 
 A Minecraft server implementation in Elixir. Until this reaches version 1.0, please do not consider it ready for running real Minecraft servers (unless you're adventurous).
 

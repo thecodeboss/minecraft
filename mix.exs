@@ -41,6 +41,7 @@ defmodule Minecraft.MixProject do
   defp deps do
     [
       {:ex_doc, "~> 0.16", only: :dev, runtime: false},
+      {:inch_ex, only: :docs},
       {:ranch, "~> 1.5"},
       {:poison, "~> 3.1"}
     ]

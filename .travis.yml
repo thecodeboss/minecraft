@@ -4,3 +4,6 @@ elixir:
 otp_release:
   - 20.3
 sudo: false
+after_script:
+  - mix deps.get --only docs
+  - MIX_ENV=docs mix inch.report
