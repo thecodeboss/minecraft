@@ -4,9 +4,7 @@ defmodule Minecraft.Packet do
   """
   use Bitwise
   alias Minecraft.Packet.Client
-  alias Minecraft.Packet.Handshake
   alias Minecraft.Packet.Server
-  alias Minecraft.Packet.Status
 
   @type varint :: -2_147_483_648..2_147_483_647
   @type varlong :: -9_223_372_036_854_775_808..9_223_372_036_854_775_807
@@ -16,47 +14,41 @@ defmodule Minecraft.Packet do
   """
   @spec deserialize(binary, state :: atom, type :: :client | :server) ::
           {packet :: term, rest :: binary} | {:error, :invalid_packet}
-  def deserialize(data, state, type \\ :client)
-
-  def deserialize(data, :handshake, type) when is_binary(data) do
+  def deserialize(data, state, type \\ :client) do
     {_packet_size, data} = decode_varint(data)
     {packet_id, data} = decode_varint(data)
-    Handshake.deserialize(packet_id, data, type)
-  end
 
-  def deserialize(data, :status, type) when is_binary(data) do
-    {_packet_size, data} = decode_varint(data)
-    {packet_id, data} = decode_varint(data)
-    Status.deserialize(packet_id, data, type)
+    case {state, packet_id, type} do
+      # Client Handshake Packets
+      {:handshake, 0, :client} ->
+        Client.Handshake.deserialize(data)
+
+      # Client Status Packets
+      {:status, 0, :client} ->
+        Client.Status.Request.deserialize(data)
+
+      {:status, 1, :client} ->
+        Client.Status.Ping.deserialize(data)
+
+      # Server Status Packets
+      {:status, 0, :server} ->
+        Server.Status.Response.deserialize(data)
+
+      {:status, 1, :server} ->
+        Server.Status.Pong.deserialize(data)
+
+      _ ->
+        {:error, :invalid_packet}
+    end
   end
 
   @doc """
   Serializes a packet into binary data.
   """
   @spec serialize(packet :: struct) :: {:ok, binary} | {:error, term}
-  def serialize(%Client.Handshake{} = request) do
-    packet_binary = Handshake.serialize(request)
-    serialize(request.packet_id, packet_binary)
-  end
-
-  def serialize(%Client.Status.Request{} = request) do
-    packet_binary = Status.serialize(request)
-    serialize(request.packet_id, packet_binary)
-  end
-
-  def serialize(%Client.Status.Ping{} = request) do
-    packet_binary = Status.serialize(request)
-    serialize(request.packet_id, packet_binary)
-  end
-
-  def serialize(%Server.Status.Response{} = response) do
-    packet_binary = Status.serialize(response)
-    serialize(response.packet_id, packet_binary)
-  end
-
-  def serialize(%Server.Status.Pong{} = response) do
-    packet_binary = Status.serialize(response)
-    serialize(response.packet_id, packet_binary)
+  def serialize(%struct{} = request) do
+    {packet_id, packet_binary} = struct.serialize(request)
+    serialize(packet_id, packet_binary)
   end
 
   @doc """
