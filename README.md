@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.com/thecodeboss/minecraft.svg?branch=master)](https://travis-ci.com/thecodeboss/minecraft)
 [![Inline docs](http://inch-ci.org/github/thecodeboss/minecraft.svg)](http://inch-ci.org/github/thecodeboss/minecraft)
+[![Coverage Status](https://coveralls.io/repos/thecodeboss/minecraft/badge.svg?branch=master&service=github)](https://coveralls.io/github/thecodeboss/minecraft?branch=master)
 
 A Minecraft server implementation in Elixir. Until this reaches version 1.0, please do not consider it ready for running real Minecraft servers (unless you're adventurous).
 

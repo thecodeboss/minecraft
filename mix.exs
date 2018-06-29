@@ -22,6 +22,15 @@ defmodule Minecraft.MixProject do
         # The main page in the docs
         main: "README",
         extras: ["README.md": [title: "Minecraft"]]
+      ],
+
+      # Coverage
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
       ]
     ]
   end
@@ -40,6 +49,7 @@ defmodule Minecraft.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:excoveralls, "~> 0.8", only: :test},
       {:ex_doc, "~> 0.16", only: :dev, runtime: false},
       {:inch_ex, only: :docs},
       {:ranch, "~> 1.5"},
