@@ -17,7 +17,7 @@ defmodule Minecraft.Packet.Client.Handshake do
             server_port: nil,
             next_state: nil
 
-  @spec serialize(t) :: {0, binary}
+  @spec serialize(t) :: {packet_id :: 0, binary}
   def serialize(%__MODULE__{} = packet) do
     protocol_version = encode_varint(packet.protocol_version)
     server_addr = encode_string(packet.server_addr)

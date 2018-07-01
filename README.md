@@ -39,11 +39,11 @@ The following list of to-do items should be enough to be able to play on the ser
 
 ### Login Packets
 
-- [ ] Client: Login Start
-- [ ] Server: Encryption Request
-- [ ] Client: Encryption Response
+- [x] Client: Login Start
+- [x] Server: Encryption Request
+- [x] Client: Encryption Response
 - [ ] *(optional)* Server: Set Compression
-- [ ] Server: Login Success
+- [x] Server: Login Success
 - [ ] Server: Disconnect
 
 ### Play Packets

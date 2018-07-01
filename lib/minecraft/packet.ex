@@ -37,6 +37,23 @@ defmodule Minecraft.Packet do
       {:status, 1, :server} ->
         Server.Status.Pong.deserialize(data)
 
+      # Client Login Packets
+      {:login, 0, :client} ->
+        Client.Login.LoginStart.deserialize(data)
+
+      {:login, 1, :client} ->
+        Client.Login.EncryptionResponse.deserialize(data)
+
+      # Server Login Packets
+      # TODO {:login, 0, :server} ->
+      # Server.Login.Disconnect.deserialize(data)
+
+      {:login, 1, :server} ->
+        Server.Login.EncryptionRequest.deserialize(data)
+
+      {:login, 2, :server} ->
+        Server.Login.LoginSuccess.deserialize(data)
+
       _ ->
         {:error, :invalid_packet}
     end

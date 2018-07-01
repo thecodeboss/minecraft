@@ -9,7 +9,7 @@ defmodule Minecraft.Packet.Server.Status do
     defstruct packet_id: 0,
               json: nil
 
-    @spec serialize(t) :: {0, binary}
+    @spec serialize(t) :: {packet_id :: 0, binary}
     def serialize(%__MODULE__{json: json}) do
       {0, encode_string(json)}
     end
@@ -28,7 +28,7 @@ defmodule Minecraft.Packet.Server.Status do
 
     @type t :: %__MODULE__{packet_id: 1, payload: integer}
 
-    @spec serialize(t) :: {1, binary}
+    @spec serialize(t) :: {packet_id :: 1, binary}
     def serialize(%__MODULE__{payload: payload}) do
       {1, <<payload::64-signed>>}
     end

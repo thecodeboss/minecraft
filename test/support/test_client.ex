@@ -16,6 +16,14 @@ defmodule Minecraft.TestClient do
     GenServer.start_link(__MODULE__, [opts])
   end
 
+  def encrypt(pid, secret) do
+    GenServer.call(pid, {:encrypt, secret})
+  end
+
+  def receive(pid) do
+    GenServer.call(pid, :receive)
+  end
+
   @doc """
   Sends a packet to the server.
   """
@@ -53,46 +61,73 @@ defmodule Minecraft.TestClient do
     port = Keyword.get(opts, :port, 25565)
     tcp_opts = [:binary, active: false]
     {:ok, socket} = :gen_tcp.connect('localhost', port, tcp_opts)
-    {:ok, {socket, :handshake}}
+    {:ok, {socket, :handshake, nil}}
   end
 
   @impl true
-  def handle_call({:send, packet}, _from, {socket, state}) do
+  def handle_call({:encrypt, secret}, _from, {socket, state, nil}) do
+    aes = %Minecraft.Crypto.AES{key: secret, ivec: secret}
+    {:reply, :ok, {socket, state, aes}}
+  end
+
+  def handle_call(:receive, _from, {socket, state, aes}) do
+    case :gen_tcp.recv(socket, 0) do
+      {:ok, response} ->
+        {response, aes} = maybe_decrypt(response, aes)
+        {response_packet, ""} = Minecraft.Packet.deserialize(response, state, :server)
+        {:reply, {:ok, response_packet}, {socket, state, aes}}
+
+      {:error, _} = err ->
+        {:stop, :normal, err, {socket, state, aes}}
+    end
+  end
+
+  def handle_call({:send, packet}, _from, {socket, state, aes}) do
     {:ok, request} = Minecraft.Packet.serialize(packet)
     :ok = :gen_tcp.send(socket, request)
 
     case :gen_tcp.recv(socket, 0) do
       {:ok, response} ->
+        {response, aes} = maybe_decrypt(response, aes)
         {response_packet, ""} = Minecraft.Packet.deserialize(response, state, :server)
-        {:reply, {:ok, response_packet}, {socket, state}}
+        {:reply, {:ok, response_packet}, {socket, state, aes}}
 
       {:error, _} = err ->
-        {:stop, :normal, err, {socket, state}}
+        {:stop, :normal, err, {socket, state, aes}}
     end
   end
 
   @impl true
-  def handle_call({:send_raw, data}, _from, {socket, state}) do
+  def handle_call({:send_raw, data}, _from, {socket, state, aes}) do
     :ok = :gen_tcp.send(socket, data)
 
     case :gen_tcp.recv(socket, 0) do
       {:ok, response} ->
+        {response, aes} = maybe_decrypt(response, aes)
         {response_packet, ""} = Minecraft.Packet.deserialize(response, state, :server)
-        {:reply, {:ok, response_packet}, {socket, state}}
+        {:reply, {:ok, response_packet}, {socket, state, aes}}
 
       {:error, _} = err ->
-        {:stop, :normal, err, {socket, state}}
+        {:stop, :normal, err, {socket, state, aes}}
     end
   end
 
-  def handle_call({:set_state, state}, _from, {socket, _old_state}) do
-    {:reply, :ok, {socket, state}}
+  def handle_call({:set_state, state}, _from, {socket, _old_state, aes}) do
+    {:reply, :ok, {socket, state, aes}}
   end
 
   @impl true
-  def handle_cast({:cast, packet}, {socket, state}) do
+  def handle_cast({:cast, packet}, {socket, state, aes}) do
     {:ok, request} = Minecraft.Packet.serialize(packet)
     :ok = :gen_tcp.send(socket, request)
-    {:noreply, {socket, state}}
+    {:noreply, {socket, state, aes}}
+  end
+
+  defp maybe_decrypt(data, nil) do
+    {data, nil}
+  end
+
+  defp maybe_decrypt(data, aes) do
+    Minecraft.Crypto.AES.decrypt(data, aes)
   end
 end
