@@ -16,6 +16,9 @@ defmodule Minecraft.Protocol do
     {:ok, pid}
   end
 
+  @doc """
+  Sends a packet to the connected client.
+  """
   @spec send_packet(pid, struct) :: :ok | {:error, term}
   def send_packet(pid, packet) do
     GenServer.call(pid, {:send_packet, packet})
