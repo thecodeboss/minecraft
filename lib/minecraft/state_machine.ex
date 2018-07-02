@@ -10,6 +10,10 @@ defmodule Minecraft.StateMachine do
   alias Minecraft.Protocol
   @behaviour :gen_statem
 
+  @doc """
+  Starts the state machine.
+  """
+  @spec start_link(protocol :: pid) :: :gen_statem.start_ret()
   def start_link(protocol) do
     :gen_statem.start_link(__MODULE__, protocol, [])
   end
@@ -30,6 +34,10 @@ defmodule Minecraft.StateMachine do
     :ignored
   end
 
+  @doc """
+  State entered when a client logs in and begins joining the server.
+  """
+  @spec join(:internal, any, pid) :: {:next_state, :ready, pid}
   def join(:internal, _, protocol) do
     :ok = Protocol.send_packet(protocol, %Server.Play.JoinGame{entity_id: 123})
     :ok = Protocol.send_packet(protocol, %Server.Play.SpawnPosition{position: {0, 64, 0}})
