@@ -20,7 +20,9 @@ defmodule Minecraft.Connection do
   @type transport :: :ranch_tcp
 
   @type t :: %__MODULE__{
+          protocol_handler: pid,
           assigns: %{atom => any} | nil,
+          settings: %{atom => any} | nil,
           current_state: state,
           socket: port | nil,
           transport: transport | nil,
@@ -28,19 +30,28 @@ defmodule Minecraft.Connection do
           data: binary | nil,
           error: any,
           protocol_version: integer | nil,
-          secret: binary | nil
+          secret: binary | nil,
+          join: boolean,
+          state_machine: pid | nil,
+          encryptor: Crypto.AES.t() | nil,
+          decryptor: Crypto.AES.t() | nil
         }
 
-  defstruct assigns: nil,
+  defstruct protocol_handler: nil,
+            assigns: nil,
+            settings: nil,
             current_state: nil,
-            aes: nil,
+            encryptor: nil,
+            decryptor: nil,
             socket: nil,
             transport: nil,
             client_ip: nil,
             data: nil,
             error: nil,
             protocol_version: nil,
-            secret: nil
+            secret: nil,
+            join: false,
+            state_machine: nil
 
   @doc """
   Assigns a value to a key in the connection.
@@ -53,7 +64,7 @@ defmodule Minecraft.Connection do
   """
   @spec assign(t, atom, term) :: t
   def assign(%__MODULE__{assigns: assigns} = conn, key, value) when is_atom(key) do
-    %{conn | assigns: Map.put(assigns, key, value)}
+    %__MODULE__{conn | assigns: Map.put(assigns, key, value)}
   end
 
   @doc """
@@ -62,7 +73,8 @@ defmodule Minecraft.Connection do
   @spec close(t) :: t
   def close(conn) do
     :ok = conn.transport.close(conn.socket)
-    %__MODULE__{conn | socket: nil, transport: nil}
+
+    %__MODULE__{conn | socket: nil, transport: nil, state_machine: nil}
   end
 
   @doc """
@@ -82,15 +94,24 @@ defmodule Minecraft.Connection do
   """
   @spec encrypt(t, binary) :: t
   def encrypt(conn, secret) do
-    aes = %Crypto.AES{key: secret, ivec: secret}
-    %__MODULE__{conn | aes: aes, secret: secret}
+    encryptor = %Crypto.AES{key: secret, ivec: secret}
+    decryptor = %Crypto.AES{key: secret, ivec: secret}
+    %__MODULE__{conn | encryptor: encryptor, decryptor: decryptor, secret: secret}
+  end
+
+  @doc """
+  Called when `Connection` is ready for the user to join the server.
+  """
+  @spec join(t) :: t
+  def join(conn) do
+    %__MODULE__{conn | join: true}
   end
 
   @doc """
   Initializes a `Connection`.
   """
-  @spec init(port(), transport()) :: t
-  def init(socket, transport) do
+  @spec init(pid(), port(), transport()) :: t
+  def init(protocol_handler, socket, transport) do
     {:ok, {client_ip, _port}} = :inet.peername(socket)
     client_ip = IO.iodata_to_binary(:inet.ntoa(client_ip))
     :ok = transport.setopts(socket, active: :once)
@@ -98,7 +119,9 @@ defmodule Minecraft.Connection do
     Logger.info(fn -> "Client #{client_ip} connected." end)
 
     %__MODULE__{
+      protocol_handler: protocol_handler,
       assigns: %{},
+      settings: %{},
       current_state: :handshake,
       socket: socket,
       transport: transport,
@@ -133,6 +156,7 @@ defmodule Minecraft.Connection do
   """
   @spec put_data(t, binary) :: t
   def put_data(conn, data) do
+    {data, conn} = maybe_decrypt(data, conn)
     %__MODULE__{conn | data: conn.data <> data}
   end
 
@@ -169,13 +193,21 @@ defmodule Minecraft.Connection do
   end
 
   @doc """
+  Sets a setting for this `Connection`.
+  """
+  @spec put_setting(t, key :: atom, value :: any) :: t
+  def put_setting(%__MODULE__{settings: settings} = conn, key, value) do
+    %__MODULE__{conn | settings: Map.put(settings, key, value)}
+  end
+
+  @doc """
   Pops a packet from the `Connection`.
   """
   @spec read_packet(t) :: {:ok, struct, t} | {:error, t}
   def read_packet(conn) do
     case Packet.deserialize(conn.data, conn.current_state) do
       {packet, rest} when is_binary(rest) ->
-        Logger.debug(fn -> "REQUEST: #{inspect(packet)}" end)
+        Logger.debug(fn -> "RECV: #{inspect(packet)}" end)
         {:ok, packet, %__MODULE__{conn | data: rest}}
 
       {:error, :invalid_packet} ->
@@ -188,26 +220,35 @@ defmodule Minecraft.Connection do
   end
 
   @doc """
-  Sends a response to the client.
+  Sends a packet to the client.
   """
-  @spec send_response(t, struct) :: t
-  def send_response(conn, response) do
-    Logger.debug(fn -> "RESPONSE: #{inspect(response)}" end)
+  @spec send_packet(t, struct) :: t | {:error, :closed}
+  def send_packet(conn, packet) do
+    Logger.debug(fn -> "SEND: #{inspect(packet)}" end)
 
-    {:ok, response} = Packet.serialize(response)
-    {response, conn} = maybe_encrypt(response, conn)
+    {:ok, raw} = Packet.serialize(packet)
+    {raw, conn} = maybe_encrypt(raw, conn)
 
-    :ok = conn.transport.send(conn.socket, response)
+    :ok = conn.transport.send(conn.socket, raw)
     conn
   end
 
-  defp maybe_encrypt(response, %__MODULE__{aes: nil} = conn) do
+  defp maybe_decrypt(request, %__MODULE__{decryptor: nil} = conn) do
+    {request, conn}
+  end
+
+  defp maybe_decrypt(request, conn) do
+    {decrypted, decryptor} = Crypto.AES.decrypt(request, conn.decryptor)
+    {decrypted, %__MODULE__{conn | decryptor: decryptor}}
+  end
+
+  defp maybe_encrypt(response, %__MODULE__{encryptor: nil} = conn) do
     {response, conn}
   end
 
   defp maybe_encrypt(response, conn) do
-    {encrypted, aes} = Crypto.AES.encrypt(response, conn.aes)
-    {encrypted, %__MODULE__{conn | aes: aes}}
+    {encrypted, encryptor} = Crypto.AES.encrypt(response, conn.encryptor)
+    {encrypted, %__MODULE__{conn | encryptor: encryptor}}
   end
 
   defp normalize_uuid(<<a::8-binary, b::4-binary, c::4-binary, d::4-binary, e::12-binary>>) do

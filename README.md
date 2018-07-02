@@ -48,10 +48,11 @@ The following list of to-do items should be enough to be able to play on the ser
 
 ### Play Packets
 
-- [ ] Server: Join Game
-- [ ] Server: Spawn Position
-- [ ] Server: Player Abilities
-- [ ] Client: Client Settings
+- [x] Server: Join Game
+- [x] Server: Spawn Position
+- [x] Server: Player Abilities
+- [x] Client: Plugin Message
+- [x] Client: Client Settings
 - [ ] Server: Player Position and Look
 - [ ] Client: Teleport Confirm
 - [ ] Client: Player Position and Look

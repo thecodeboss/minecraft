@@ -10,7 +10,7 @@ defmodule Minecraft.Protocol.Handler do
   @doc """
   Handles a packet from a client, and returns either a response packet, or `{:ok, :noreply}`.
   """
-  @spec handle(packet :: struct, Connection.t()) ::
+  @spec handle(packet :: Minecraft.Packet.packet_types(), Connection.t()) ::
           {:ok, :noreply | struct, Connection.t()}
           | {:error, :unsupported_protocol, Connection.t()}
   def handle(%Client.Handshake{protocol_version: 340} = packet, conn) do
@@ -70,6 +70,8 @@ defmodule Minecraft.Protocol.Handler do
           conn
           |> Connection.encrypt(shared_secret)
           |> Connection.verify_login()
+          |> Connection.put_state(:play)
+          |> Connection.join()
 
         response = %Server.Login.LoginSuccess{
           uuid: conn.assigns[:uuid],
@@ -81,5 +83,22 @@ defmodule Minecraft.Protocol.Handler do
       _ ->
         {:error, :bad_verify_token, conn}
     end
+  end
+
+  def handle(%Client.Play.ClientSettings{} = packet, conn) do
+    conn =
+      conn
+      |> Connection.put_setting(:locale, packet.locale)
+      |> Connection.put_setting(:view_distance, packet.view_distance)
+      |> Connection.put_setting(:chat_mode, packet.chat_mode)
+      |> Connection.put_setting(:chat_colors, packet.chat_colors)
+      |> Connection.put_setting(:displayed_skin_parts, packet.displayed_skin_parts)
+      |> Connection.put_setting(:main_hand, packet.main_hand)
+
+    {:ok, :noreply, conn}
+  end
+
+  def handle(%Client.Play.PluginMessage{}, conn) do
+    {:ok, :noreply, conn}
   end
 end

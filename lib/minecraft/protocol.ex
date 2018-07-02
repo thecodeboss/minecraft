@@ -16,6 +16,11 @@ defmodule Minecraft.Protocol do
     {:ok, pid}
   end
 
+  @spec send_packet(pid, struct) :: :ok | {:error, term}
+  def send_packet(pid, packet) do
+    GenServer.call(pid, {:send_packet, packet})
+  end
+
   #
   # Server Callbacks
   #
@@ -23,7 +28,7 @@ defmodule Minecraft.Protocol do
   @impl true
   def init({ref, socket, transport, _protocol_opts}) do
     :ok = :ranch.accept_ack(ref)
-    conn = Connection.init(socket, transport)
+    conn = Connection.init(self(), socket, transport)
     :gen_server.enter_loop(__MODULE__, [], conn)
   end
 
@@ -41,9 +46,20 @@ defmodule Minecraft.Protocol do
     {:stop, :normal, conn}
   end
 
+  @impl true
+  def handle_call({:send_packet, packet}, _from, conn) do
+    conn = Connection.send_packet(conn, packet)
+    {:reply, :ok, conn}
+  end
+
   #
   # Helpers
   #
+  defp handle_conn(%Connection{join: true, state_machine: nil} = conn) do
+    {:ok, state_machine} = Minecraft.StateMachine.start_link(self())
+    handle_conn(%Connection{conn | state_machine: state_machine})
+  end
+
   defp handle_conn(%Connection{data: ""} = conn) do
     conn = Connection.continue(conn)
     {:noreply, conn}
@@ -67,7 +83,7 @@ defmodule Minecraft.Protocol do
 
       {:ok, response, conn} ->
         conn
-        |> Connection.send_response(response)
+        |> Connection.send_packet(response)
         |> handle_conn()
 
       {:error, _, conn} = err ->

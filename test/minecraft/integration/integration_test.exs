@@ -34,7 +34,7 @@ defmodule Minecraft.HandshakeTest do
              TestClient.send(client, %Client.Status.Ping{payload: 12_345_678})
   end
 
-  test "login", %{client: client} do
+  test "login and play", %{client: client} do
     with_mock HTTPoison, get!: fn _url -> @fake_mojang_response end do
       packet = %Client.Handshake{server_addr: "localhost", server_port: 25565, next_state: :login}
       assert :ok = TestClient.cast(client, packet)
@@ -55,6 +55,19 @@ defmodule Minecraft.HandshakeTest do
 
       assert {:ok, %Server.Login.LoginSuccess{username: "TheCodeBoss"}} =
                TestClient.receive(client)
+
+      assert :ok = TestClient.set_state(client, :play)
+      assert :ok = TestClient.cast(client, %Client.Play.ClientSettings{})
+
+      assert :ok =
+               TestClient.cast(client, %Client.Play.PluginMessage{
+                 channel: "MC|Brand",
+                 data: "\avanilla"
+               })
+
+      assert {:ok, %Server.Play.JoinGame{}} = TestClient.receive(client)
+      assert {:ok, %Server.Play.SpawnPosition{}} = TestClient.receive(client)
+      assert {:ok, %Server.Play.PlayerAbilities{}} = TestClient.receive(client)
     end
   end
 

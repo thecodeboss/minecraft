@@ -113,4 +113,13 @@ defmodule Minecraft.PacketTest do
       assert {"a", <<1, 2, 3>>} = decode_string(<<1, "a", 1, 2, 3>>)
     end
   end
+
+  test "bools" do
+    assert {false, ""} = decode_bool(<<0>>)
+    assert {true, ""} = decode_bool(<<1>>)
+    assert {false, <<1, 2, 3>>} = decode_bool(<<0, 1, 2, 3>>)
+    assert {true, <<1, 2, 3>>} = decode_bool(<<1, 1, 2, 3>>)
+    assert <<0>> = encode_bool(false)
+    assert <<1>> = encode_bool(true)
+  end
 end

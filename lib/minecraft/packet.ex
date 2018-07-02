@@ -6,8 +6,26 @@ defmodule Minecraft.Packet do
   alias Minecraft.Packet.Client
   alias Minecraft.Packet.Server
 
+  @type position :: {x :: -33_554_432..33_554_431, y :: -2048..2047, z :: -33_554_432..33_554_431}
   @type varint :: -2_147_483_648..2_147_483_647
   @type varlong :: -9_223_372_036_854_775_808..9_223_372_036_854_775_807
+
+  @type packet_types ::
+          Client.Handshake.t()
+          | Client.Handshake.t()
+          | Client.Status.Request.t()
+          | Client.Status.Ping.t()
+          | Server.Status.Response.t()
+          | Server.Status.Pong.t()
+          | Client.Login.LoginStart.t()
+          | Client.Login.EncryptionResponse.t()
+          | Server.Login.EncryptionRequest.t()
+          | Server.Login.LoginSuccess.t()
+          | Client.Play.ClientSettings.t()
+          | Client.Play.PluginMessage.t()
+          | Server.Play.JoinGame.t()
+          | Server.Play.SpawnPosition.t()
+          | Server.Play.PlayerAbilities.t()
 
   @doc """
   Given a raw binary packet, deserializes it into a `Packet` struct.
@@ -15,9 +33,20 @@ defmodule Minecraft.Packet do
   @spec deserialize(binary, state :: atom, type :: :client | :server) ::
           {packet :: term, rest :: binary} | {:error, :invalid_packet}
   def deserialize(data, state, type \\ :client) do
-    {_packet_size, data} = decode_varint(data)
+    {packet_size, data} = decode_varint(data)
+    <<data::binary-size(packet_size), rest::binary>> = data
     {packet_id, data} = decode_varint(data)
 
+    case do_deserialize({state, packet_id, type}, data) do
+      {packet, ""} ->
+        {packet, rest}
+
+      error ->
+        error
+    end
+  end
+
+  defp do_deserialize({state, packet_id, type}, data) do
     case {state, packet_id, type} do
       # Client Handshake Packets
       {:handshake, 0, :client} ->
@@ -54,6 +83,23 @@ defmodule Minecraft.Packet do
       {:login, 2, :server} ->
         Server.Login.LoginSuccess.deserialize(data)
 
+      # Client Play Packets
+      {:play, 4, :client} ->
+        Client.Play.ClientSettings.deserialize(data)
+
+      {:play, 9, :client} ->
+        Client.Play.PluginMessage.deserialize(data)
+
+      # Server Play Packets
+      {:play, 0x23, :server} ->
+        Server.Play.JoinGame.deserialize(data)
+
+      {:play, 0x46, :server} ->
+        Server.Play.SpawnPosition.deserialize(data)
+
+      {:play, 0x2C, :server} ->
+        Server.Play.PlayerAbilities.deserialize(data)
+
       _ ->
         {:error, :invalid_packet}
     end
@@ -83,6 +129,21 @@ defmodule Minecraft.Packet do
     packet_size = encode_varint(byte_size(packet_binary) + byte_size(packet_id))
     response = <<packet_size::binary, packet_id::binary, packet_binary::binary>>
     {:ok, response}
+  end
+
+  @doc """
+  Decodes a boolean.
+  """
+  @spec decode_bool(binary) :: {decoded :: boolean, rest :: binary}
+  def decode_bool(<<0, rest::binary>>), do: {false, rest}
+  def decode_bool(<<1, rest::binary>>), do: {true, rest}
+
+  @doc """
+  Decodes a position.
+  """
+  @spec decode_position(binary) :: {position, rest :: binary}
+  def decode_position(<<x::26-signed, y::12-signed, z::26-signed, rest::binary>>) do
+    {{x, y, z}, rest}
   end
 
   @doc """
@@ -137,6 +198,21 @@ defmodule Minecraft.Packet do
     {strlen, data} = decode_varint(data)
     <<string::binary-size(strlen), rest::binary>> = data
     {string, rest}
+  end
+
+  @doc """
+  Encodes a boolean.
+  """
+  @spec encode_bool(boolean) :: binary
+  def encode_bool(false = _boolean), do: <<0>>
+  def encode_bool(true), do: <<1>>
+
+  @doc """
+  Encodes a position.
+  """
+  @spec encode_position(position) :: binary
+  def encode_position({x, y, z}) do
+    <<x::26-signed, y::12-signed, z::26-signed>>
   end
 
   @doc """
