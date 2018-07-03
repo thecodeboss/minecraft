@@ -42,6 +42,12 @@ defmodule Minecraft.StateMachine do
     :ok = Protocol.send_packet(protocol, %Server.Play.JoinGame{entity_id: 123})
     :ok = Protocol.send_packet(protocol, %Server.Play.SpawnPosition{position: {0, 64, 0}})
     :ok = Protocol.send_packet(protocol, %Server.Play.PlayerAbilities{})
+
+    :ok =
+      Protocol.send_packet(protocol, %Server.Play.PlayerPositionAndLook{
+        teleport_id: :rand.uniform(127)
+      })
+
     {:next_state, :ready, protocol}
   end
 end

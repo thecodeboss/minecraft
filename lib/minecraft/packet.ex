@@ -21,11 +21,15 @@ defmodule Minecraft.Packet do
           | Client.Login.EncryptionResponse.t()
           | Server.Login.EncryptionRequest.t()
           | Server.Login.LoginSuccess.t()
+          | Client.Play.TeleportConfirm.t()
+          | Client.Play.ClientStatus.t()
           | Client.Play.ClientSettings.t()
           | Client.Play.PluginMessage.t()
+          | Client.Play.PlayerPositionAndLook.t()
           | Server.Play.JoinGame.t()
           | Server.Play.SpawnPosition.t()
           | Server.Play.PlayerAbilities.t()
+          | Server.Play.PlayerPositionAndLook.t()
 
   @doc """
   Given a raw binary packet, deserializes it into a `Packet` struct.
@@ -84,11 +88,20 @@ defmodule Minecraft.Packet do
         Server.Login.LoginSuccess.deserialize(data)
 
       # Client Play Packets
+      {:play, 0, :client} ->
+        Client.Play.TeleportConfirm.deserialize(data)
+
+      {:play, 3, :client} ->
+        Client.Play.ClientStatus.deserialize(data)
+
       {:play, 4, :client} ->
         Client.Play.ClientSettings.deserialize(data)
 
       {:play, 9, :client} ->
         Client.Play.PluginMessage.deserialize(data)
+
+      {:play, 0x0E, :client} ->
+        Client.Play.PlayerPositionAndLook.deserialize(data)
 
       # Server Play Packets
       {:play, 0x23, :server} ->
@@ -99,6 +112,9 @@ defmodule Minecraft.Packet do
 
       {:play, 0x2C, :server} ->
         Server.Play.PlayerAbilities.deserialize(data)
+
+      {:play, 0x2F, :server} ->
+        Server.Play.PlayerPositionAndLook.deserialize(data)
 
       _ ->
         {:error, :invalid_packet}

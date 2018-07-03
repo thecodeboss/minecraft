@@ -101,4 +101,19 @@ defmodule Minecraft.Protocol.Handler do
   def handle(%Client.Play.PluginMessage{}, conn) do
     {:ok, :noreply, conn}
   end
+
+  def handle(%Client.Play.TeleportConfirm{}, conn) do
+    # TODO: Verify this matches the one sent to the client
+    {:ok, :noreply, conn}
+  end
+
+  def handle(%Client.Play.PlayerPositionAndLook{}, conn) do
+    # TODO: Change player's position
+    {:ok, :noreply, conn}
+  end
+
+  def handle(%Client.Play.ClientStatus{}, conn) do
+    # TODO: Send Statistics when packet.action == :request_stats
+    {:ok, :noreply, conn}
+  end
 end

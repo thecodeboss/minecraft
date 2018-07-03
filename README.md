@@ -53,10 +53,10 @@ The following list of to-do items should be enough to be able to play on the ser
 - [x] Server: Player Abilities
 - [x] Client: Plugin Message
 - [x] Client: Client Settings
-- [ ] Server: Player Position and Look
-- [ ] Client: Teleport Confirm
-- [ ] Client: Player Position and Look
-- [ ] Client: Client Status
+- [x] Server: Player Position and Look
+- [x] Client: Teleport Confirm
+- [x] Client: Player Position and Look
+- [x] Client: Client Status
 - [ ] Server: Window Items
 - [ ] Server: Chunk Data
 - [ ] Client: Player

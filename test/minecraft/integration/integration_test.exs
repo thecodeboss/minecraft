@@ -68,6 +68,22 @@ defmodule Minecraft.HandshakeTest do
       assert {:ok, %Server.Play.JoinGame{}} = TestClient.receive(client)
       assert {:ok, %Server.Play.SpawnPosition{}} = TestClient.receive(client)
       assert {:ok, %Server.Play.PlayerAbilities{}} = TestClient.receive(client)
+
+      assert {:ok, %Server.Play.PlayerPositionAndLook{} = ppal} = TestClient.receive(client)
+
+      assert :ok =
+               TestClient.cast(client, %Client.Play.TeleportConfirm{teleport_id: ppal.teleport_id})
+
+      assert :ok =
+               TestClient.cast(client, %Client.Play.PlayerPositionAndLook{
+                 x: ppal.x,
+                 y: ppal.y,
+                 z: ppal.z,
+                 pitch: ppal.pitch,
+                 yaw: ppal.yaw
+               })
+
+      assert :ok = TestClient.cast(client, %Client.Play.ClientStatus{})
     end
   end
 
