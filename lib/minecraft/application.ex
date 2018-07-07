@@ -6,6 +6,7 @@ defmodule Minecraft.Application do
   def start(_type, _args) do
     children = [
       Minecraft.Crypto,
+      Minecraft.World,
       Minecraft.Server
     ]
 

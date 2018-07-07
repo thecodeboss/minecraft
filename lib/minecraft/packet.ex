@@ -25,7 +25,9 @@ defmodule Minecraft.Packet do
           | Client.Play.ClientStatus.t()
           | Client.Play.ClientSettings.t()
           | Client.Play.PluginMessage.t()
+          | Client.Play.PlayerPosition.t()
           | Client.Play.PlayerPositionAndLook.t()
+          | Client.Play.PlayerLook.t()
           | Server.Play.JoinGame.t()
           | Server.Play.SpawnPosition.t()
           | Server.Play.PlayerAbilities.t()
@@ -100,8 +102,14 @@ defmodule Minecraft.Packet do
       {:play, 9, :client} ->
         Client.Play.PluginMessage.deserialize(data)
 
+      {:play, 0x0D, :client} ->
+        Client.Play.PlayerPosition.deserialize(data)
+
       {:play, 0x0E, :client} ->
         Client.Play.PlayerPositionAndLook.deserialize(data)
+
+      {:play, 0x0F, :client} ->
+        Client.Play.PlayerLook.deserialize(data)
 
       # Server Play Packets
       {:play, 0x23, :server} ->

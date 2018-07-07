@@ -1,35 +1,31 @@
-defmodule Minecraft.Packet.Client.Play.PlayerPositionAndLook do
+defmodule Minecraft.Packet.Client.Play.PlayerPosition do
   @moduledoc false
   import Minecraft.Packet, only: [decode_bool: 1, encode_bool: 1]
 
-  defstruct packet_id: 0x0E,
+  defstruct packet_id: 0x0D,
             x: 0.0,
             y: 200.0,
             z: 0.0,
-            yaw: 0.0,
-            pitch: 0.0,
             on_ground: true
 
   @type t :: %__MODULE__{
-          packet_id: 0x0E,
+          packet_id: 0x0D,
           x: float,
           y: float,
           z: float,
-          yaw: float,
-          pitch: float,
           on_ground: boolean
         }
 
-  @spec serialize(t) :: {packet_id :: 0x0E, binary}
+  @spec serialize(t) :: {packet_id :: 0x0D, binary}
   def serialize(%__MODULE__{} = packet) do
-    {0x0E,
-     <<packet.x::64-float, packet.y::64-float, packet.z::64-float, packet.yaw::32-float,
-       packet.pitch::32-float, encode_bool(packet.on_ground)::binary>>}
+    {0x0D,
+     <<packet.x::64-float, packet.y::64-float, packet.z::64-float,
+       encode_bool(packet.on_ground)::binary>>}
   end
 
   @spec deserialize(binary) :: {t, rest :: binary}
   def deserialize(data) do
-    <<x::64-float, y::64-float, z::64-float, yaw::32-float, pitch::32-float, rest::binary>> = data
+    <<x::64-float, y::64-float, z::64-float, rest::binary>> = data
 
     {on_ground, rest} = decode_bool(rest)
 
@@ -37,8 +33,6 @@ defmodule Minecraft.Packet.Client.Play.PlayerPositionAndLook do
        x: x,
        y: y,
        z: z,
-       yaw: yaw,
-       pitch: pitch,
        on_ground: on_ground
      }, rest}
   end

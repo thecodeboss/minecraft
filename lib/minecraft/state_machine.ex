@@ -40,13 +40,30 @@ defmodule Minecraft.StateMachine do
   @spec join(:internal, any, pid) :: {:next_state, :ready, pid}
   def join(:internal, _, protocol) do
     :ok = Protocol.send_packet(protocol, %Server.Play.JoinGame{entity_id: 123})
-    :ok = Protocol.send_packet(protocol, %Server.Play.SpawnPosition{position: {0, 64, 0}})
+    :ok = Protocol.send_packet(protocol, %Server.Play.SpawnPosition{position: {0, 200, 0}})
     :ok = Protocol.send_packet(protocol, %Server.Play.PlayerAbilities{})
 
     :ok =
       Protocol.send_packet(protocol, %Server.Play.PlayerPositionAndLook{
         teleport_id: :rand.uniform(127)
       })
+
+    for n <- 0..8 do
+      for x <- -n..n do
+        for z <- -n..n do
+          if x == n or z == n or x == -n or z == -n do
+            chunk_sections = Minecraft.World.get_chunk_data(x, z)
+
+            :ok =
+              Protocol.send_packet(protocol, %Server.Play.ChunkData{
+                chunk_x: x,
+                chunk_z: z,
+                chunk_sections: chunk_sections
+              })
+          end
+        end
+      end
+    end
 
     {:next_state, :ready, protocol}
   end

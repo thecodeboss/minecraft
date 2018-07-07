@@ -1,5 +1,5 @@
 defmodule Minecraft.HandshakeTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   alias Minecraft.Packet.Client
   alias Minecraft.Packet.Server
   alias Minecraft.TestClient

@@ -21,7 +21,7 @@ The following list of to-do items should be enough to be able to play on the ser
 
 ### General
 
-- [ ] World Generation
+- [x] World Generation
 - [ ] World in-memory storage
 - [ ] World persistence on disk
 - [ ] Core server logic (this is a catch-all)
@@ -58,7 +58,7 @@ The following list of to-do items should be enough to be able to play on the ser
 - [x] Client: Player Position and Look
 - [x] Client: Client Status
 - [ ] Server: Window Items
-- [ ] Server: Chunk Data
+- [x] Server: Chunk Data
 - [ ] Client: Player
-- [ ] Client: Player Position
-- [ ] Client: Player Look
+- [x] Client: Player Position
+- [x] Client: Player Look

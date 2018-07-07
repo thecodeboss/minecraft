@@ -2,6 +2,8 @@
     "skip_files": [
         "lib/minecraft/packet/client",
         "lib/minecraft/packet/server",
+        "lib/minecraft/world/nif.ex",
+        "lib/mix/tasks/compile.nifs.ex",
         "test/support"
     ]
 }

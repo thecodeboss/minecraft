@@ -107,7 +107,17 @@ defmodule Minecraft.Protocol.Handler do
     {:ok, :noreply, conn}
   end
 
+  def handle(%Client.Play.PlayerPosition{}, conn) do
+    # TODO: Change player's position
+    {:ok, :noreply, conn}
+  end
+
   def handle(%Client.Play.PlayerPositionAndLook{}, conn) do
+    # TODO: Change player's position
+    {:ok, :noreply, conn}
+  end
+
+  def handle(%Client.Play.PlayerLook{}, conn) do
     # TODO: Change player's position
     {:ok, :noreply, conn}
   end

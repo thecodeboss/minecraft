@@ -4,7 +4,7 @@ defmodule Minecraft.Packet.Server.Play.PlayerPositionAndLook do
 
   defstruct packet_id: 0x2F,
             x: 0.0,
-            y: 64.0,
+            y: 200.0,
             z: 0.0,
             yaw: 0.0,
             pitch: 0.0,

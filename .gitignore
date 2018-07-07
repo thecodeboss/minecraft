@@ -22,6 +22,11 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 minecraft-*.tar
 
-# Others
+# Elixir Language Server
 .elixir_ls
+
+# Visual Studio Code config
 .vscode
+
+# Compiled NIFs
+*.so
