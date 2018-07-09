@@ -25,6 +25,7 @@ defmodule Minecraft.Packet do
           | Client.Play.ClientStatus.t()
           | Client.Play.ClientSettings.t()
           | Client.Play.PluginMessage.t()
+          | Client.Play.KeepAlive.t()
           | Client.Play.PlayerPosition.t()
           | Client.Play.PlayerPositionAndLook.t()
           | Client.Play.PlayerLook.t()
@@ -32,6 +33,7 @@ defmodule Minecraft.Packet do
           | Server.Play.SpawnPosition.t()
           | Server.Play.PlayerAbilities.t()
           | Server.Play.PlayerPositionAndLook.t()
+          | Server.Play.KeepAlive.t()
 
   @doc """
   Given a raw binary packet, deserializes it into a `Packet` struct.
@@ -102,6 +104,9 @@ defmodule Minecraft.Packet do
       {:play, 9, :client} ->
         Client.Play.PluginMessage.deserialize(data)
 
+      {:play, 0x0B, :client} ->
+        Client.Play.KeepAlive.deserialize(data)
+
       {:play, 0x0D, :client} ->
         Client.Play.PlayerPosition.deserialize(data)
 
@@ -112,6 +117,9 @@ defmodule Minecraft.Packet do
         Client.Play.PlayerLook.deserialize(data)
 
       # Server Play Packets
+      {:play, 0x1F, :server} ->
+        Server.Play.KeepAlive.deserialize(data)
+
       {:play, 0x23, :server} ->
         Server.Play.JoinGame.deserialize(data)
 

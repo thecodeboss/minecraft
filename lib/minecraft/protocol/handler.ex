@@ -126,4 +126,9 @@ defmodule Minecraft.Protocol.Handler do
     # TODO: Send Statistics when packet.action == :request_stats
     {:ok, :noreply, conn}
   end
+
+  def handle(%Client.Play.KeepAlive{}, conn) do
+    # TODO: Should kick client if we don't get one of these for 30 seconds
+    {:ok, :noreply, conn}
+  end
 end

@@ -4,12 +4,13 @@ defmodule Minecraft.Packet.Server.Play.ChunkData do
   import Minecraft.Packet, only: [encode_bool: 1, encode_varint: 1]
 
   @void 127
+  @biomes String.duplicate(<<@void>>, 256)
 
   defstruct packet_id: 0x20,
             chunk_x: nil,
             chunk_z: nil,
             ground_up_continuous: true,
-            chunk_sections: nil,
+            chunk: nil,
             num_block_entities: 0,
             block_entities: nil
 
@@ -18,7 +19,7 @@ defmodule Minecraft.Packet.Server.Play.ChunkData do
           chunk_x: integer,
           chunk_z: integer,
           ground_up_continuous: boolean,
-          chunk_sections: [binary],
+          chunk: Minecraft.Chunk.t(),
           num_block_entities: integer,
           # TODO
           block_entities: nil
@@ -26,10 +27,11 @@ defmodule Minecraft.Packet.Server.Play.ChunkData do
 
   @spec serialize(t) :: {packet_id :: 0x20, binary}
   def serialize(%__MODULE__{} = packet) do
-    primary_bit_mask = 0xFFFF >>> (16 - length(packet.chunk_sections))
+    data = Minecraft.Chunk.serialize(packet.chunk)
+    num_sections = Minecraft.Chunk.num_sections(packet.chunk)
+    primary_bit_mask = 0xFFFF >>> (16 - num_sections)
     primary_bit_mask = encode_varint(primary_bit_mask)
-    biomes = String.duplicate(<<@void>>, 256)
-    data = IO.iodata_to_binary([packet.chunk_sections, biomes])
+    data = IO.iodata_to_binary([data, @biomes])
     size = encode_varint(byte_size(data))
 
     res =

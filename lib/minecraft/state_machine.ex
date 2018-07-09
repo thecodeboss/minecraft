@@ -20,12 +20,12 @@ defmodule Minecraft.StateMachine do
 
   @impl true
   def callback_mode() do
-    :state_functions
+    [:state_functions, :state_enter]
   end
 
   @impl true
   def init(protocol) do
-    {:ok, :join, protocol, [{:next_event, :internal, "hello"}]}
+    {:ok, :join, protocol, [{:next_event, :internal, nil}]}
   end
 
   @impl true
@@ -37,7 +37,7 @@ defmodule Minecraft.StateMachine do
   @doc """
   State entered when a client logs in and begins joining the server.
   """
-  @spec join(:internal, any, pid) :: {:next_state, :ready, pid}
+  @spec join(:internal, any, pid) :: {:keep_state, pid}
   def join(:internal, _, protocol) do
     :ok = Protocol.send_packet(protocol, %Server.Play.JoinGame{entity_id: 123})
     :ok = Protocol.send_packet(protocol, %Server.Play.SpawnPosition{position: {0, 200, 0}})
@@ -48,23 +48,48 @@ defmodule Minecraft.StateMachine do
         teleport_id: :rand.uniform(127)
       })
 
+    {:next_state, :spawn, protocol, [{:next_event, :internal, nil}]}
+  end
+
+  def join(:enter, _, protocol) do
+    {:keep_state, protocol}
+  end
+
+  def spawn(:internal, _, protocol) do
     for n <- 0..8 do
       for x <- -n..n do
         for z <- -n..n do
           if x == n or z == n or x == -n or z == -n do
-            chunk_sections = Minecraft.World.get_chunk_data(x, z)
+            chunk = Minecraft.World.get_chunk(x, z)
 
             :ok =
               Protocol.send_packet(protocol, %Server.Play.ChunkData{
                 chunk_x: x,
                 chunk_z: z,
-                chunk_sections: chunk_sections
+                chunk: chunk
               })
           end
         end
       end
     end
 
-    {:next_state, :ready, protocol}
+    {:next_state, :ready, protocol, [{:state_timeout, 1000, :keepalive}]}
+  end
+
+  def spawn(:enter, _, protocol) do
+    {:keep_state, protocol}
+  end
+
+  def ready(:enter, _, protocol) do
+    {:keep_state, protocol}
+  end
+
+  def ready(:state_timeout, :keepalive, protocol) do
+    :ok =
+      Protocol.send_packet(protocol, %Server.Play.KeepAlive{
+        keep_alive_id: System.system_time(:millisecond)
+      })
+
+    {:keep_state, protocol, [{:state_timeout, 1000, :keepalive}]}
   end
 end
