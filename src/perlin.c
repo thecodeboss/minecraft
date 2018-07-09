@@ -57,16 +57,20 @@ static double grad(int hash, double x, double y, double z) {
   }
 }
 
+static int xorhash(int value) {
+  return (value & 0xFF) ^ ((value >> 8) & 0xFF) ^ ((value >> 16) & 0xFF);
+}
+
 static double perlin(double x, double y, double z) {
   int floor_x = (int)floor(x);
   int floor_y = (int)floor(y);
   int floor_z = (int)floor(z);
-  int xi =
-      (floor_x & 0xFF) ^ ((floor_x >> 8) & 0xFF) ^ ((floor_x >> 16) & 0xFF);
-  int yi =
-      (floor_y & 0xFF) ^ ((floor_y >> 8) & 0xFF) ^ ((floor_y >> 16) & 0xFF);
-  int zi =
-      (floor_z & 0xFF) ^ ((floor_z >> 8) & 0xFF) ^ ((floor_z >> 16) & 0xFF);
+  int xi = xorhash(floor_x);
+  int xi1 = xorhash(floor_x + 1);
+  int yi = xorhash(floor_y);
+  int yi1 = xorhash(floor_y + 1);
+  int zi = xorhash(floor_z);
+  int zi1 = xorhash(floor_z + 1);
   double xf = x - floor_x;
   double yf = y - floor_y;
   double zf = z - floor_z;
@@ -74,13 +78,13 @@ static double perlin(double x, double y, double z) {
   double v = fade(yf);
   double w = fade(zf);
   int aaa = p[p[p[xi] + yi] + zi];
-  int aba = p[p[p[xi] + yi + 1] + zi];
-  int aab = p[p[p[xi] + yi] + zi + 1];
-  int abb = p[p[p[xi] + yi + 1] + zi + 1];
-  int baa = p[p[p[xi + 1] + yi] + zi];
-  int bba = p[p[p[xi + 1] + yi + 1] + zi];
-  int bab = p[p[p[xi + 1] + yi] + zi + 1];
-  int bbb = p[p[p[xi + 1] + yi + 1] + zi + 1];
+  int aba = p[p[p[xi] + yi1] + zi];
+  int aab = p[p[p[xi] + yi] + zi1];
+  int abb = p[p[p[xi] + yi1] + zi1];
+  int baa = p[p[p[xi1] + yi] + zi];
+  int bba = p[p[p[xi1] + yi1] + zi];
+  int bab = p[p[p[xi1] + yi] + zi1];
+  int bbb = p[p[p[xi1] + yi1] + zi1];
   double x1 = lerp(grad(aaa, xf, yf, zf), grad(baa, xf - 1.0, yf, zf), u);
   double x2 =
       lerp(grad(aba, xf, yf - 1.0, zf), grad(bba, xf - 1.0, yf - 1.0, zf), u);

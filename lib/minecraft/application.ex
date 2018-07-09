@@ -7,6 +7,7 @@ defmodule Minecraft.Application do
     children = [
       Minecraft.Crypto,
       Minecraft.World,
+      Minecraft.Users,
       Minecraft.Server
     ]
 

@@ -39,6 +39,9 @@ defmodule Minecraft.StateMachine do
   """
   @spec join(:internal, any, pid) :: {:keep_state, pid}
   def join(:internal, _, protocol) do
+    conn = Protocol.get_conn(protocol)
+    :ok = Minecraft.Users.join(conn.assigns[:uuid], conn.assigns[:username])
+
     :ok = Protocol.send_packet(protocol, %Server.Play.JoinGame{entity_id: 123})
     :ok = Protocol.send_packet(protocol, %Server.Play.SpawnPosition{position: {0, 200, 0}})
     :ok = Protocol.send_packet(protocol, %Server.Play.PlayerAbilities{})
@@ -56,10 +59,10 @@ defmodule Minecraft.StateMachine do
   end
 
   def spawn(:internal, _, protocol) do
-    for n <- 0..8 do
-      for x <- -n..n do
-        for z <- -n..n do
-          if x == n or z == n or x == -n or z == -n do
+    for r <- 0..32 do
+      for x <- -r..r do
+        for z <- -r..r do
+          if (x * x + z * z <= r * r and x * x + z * z > (r - 1) * (r - 1)) or r == 0 do
             chunk = Minecraft.World.get_chunk(x, z)
 
             :ok =

@@ -44,7 +44,6 @@ defmodule Minecraft.World do
       nil ->
         {:ok, chunk} = NIF.generate_chunk(x, z)
         chunk = %Minecraft.Chunk{resource: chunk}
-        # {:ok, chunk_sections} = NIF.generate_chunk(x, z)
         chunks = Map.put_new(chunks, x, %{})
         chunks = put_in(chunks, [x, z], chunk)
         {:reply, chunk, %{state | chunks: chunks}}
@@ -56,12 +55,17 @@ defmodule Minecraft.World do
 
   @impl true
   def handle_info({:load_chunk, x, z}, %{chunks: chunks} = state) do
-    {:ok, chunk} = NIF.generate_chunk(x, z)
-    chunk = %Minecraft.Chunk{resource: chunk}
-    # {:ok, chunk_sections} = NIF.generate_chunk(x, z)
-    chunks = Map.put_new(chunks, x, %{})
-    chunks = put_in(chunks, [x, z], chunk)
-    {:noreply, %{state | chunks: chunks}}
+    case get_in(chunks, [x, z]) do
+      nil ->
+        {:ok, chunk} = NIF.generate_chunk(x, z)
+        chunk = %Minecraft.Chunk{resource: chunk}
+        chunks = Map.put_new(chunks, x, %{})
+        chunks = put_in(chunks, [x, z], chunk)
+        {:noreply, %{state | chunks: chunks}}
+
+      _chunk_sections ->
+        {:noreply, state}
+    end
   end
 
   #
@@ -69,8 +73,8 @@ defmodule Minecraft.World do
   #
 
   defp init_spawn_area() do
-    for x <- -8..8 do
-      for z <- -8..8 do
+    for x <- -20..20 do
+      for z <- -20..20 do
         send(self(), {:load_chunk, x, z})
       end
     end

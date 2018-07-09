@@ -107,18 +107,23 @@ defmodule Minecraft.Protocol.Handler do
     {:ok, :noreply, conn}
   end
 
-  def handle(%Client.Play.PlayerPosition{}, conn) do
-    # TODO: Change player's position
+  def handle(%Client.Play.PlayerPosition{} = packet, conn) do
+    position = {packet.x, packet.y, packet.z}
+    :ok = Minecraft.Users.update_position(conn.assigns[:uuid], position)
     {:ok, :noreply, conn}
   end
 
-  def handle(%Client.Play.PlayerPositionAndLook{}, conn) do
-    # TODO: Change player's position
+  def handle(%Client.Play.PlayerPositionAndLook{} = packet, conn) do
+    position = {packet.x, packet.y, packet.z}
+    look = {packet.yaw, packet.pitch}
+    :ok = Minecraft.Users.update_position(conn.assigns[:uuid], position)
+    :ok = Minecraft.Users.update_look(conn.assigns[:uuid], look)
     {:ok, :noreply, conn}
   end
 
-  def handle(%Client.Play.PlayerLook{}, conn) do
-    # TODO: Change player's position
+  def handle(%Client.Play.PlayerLook{} = packet, conn) do
+    look = {packet.yaw, packet.pitch}
+    :ok = Minecraft.Users.update_look(conn.assigns[:uuid], look)
     {:ok, :noreply, conn}
   end
 

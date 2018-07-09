@@ -3,7 +3,20 @@
 #include <stdio.h>
 #include "erl_nif.h"
 
-#define MC_GRASS 0x20ul
+#define MC_AIR 0ul
+#define MC_STONE 16ul
+#define MC_GRASS 32ul
+#define MC_DIRT 48ul
+#define MC_COBBLESTONE 64ul
+#define MC_BEDROCK 112ul
+#define MC_STILL_WATER 144ul
+#define MC_SAND 192ul
+#define MC_GRAVEL 208ul
+#define MC_OAK_WOOD 272ul
+#define MC_OAK_LEAVES 288ul
+
+#define MC_TALL_GRASS 497ul
+#define MC_DANDELION 592ul
 
 struct Block {
   uint16_t type;

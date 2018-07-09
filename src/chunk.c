@@ -2,6 +2,17 @@
 #include <byteswap.h>
 #include <string.h>
 
+static uint8_t rand1[64] = {3, 2, 1, 2, 2, 2, 1, 1, 2, 3, 2, 2, 3, 2, 2, 1,
+                            2, 1, 2, 2, 1, 2, 3, 2, 3, 2, 1, 2, 3, 2, 1, 2,
+                            1, 2, 2, 3, 3, 3, 2, 1, 2, 1, 1, 1, 2, 3, 2, 1,
+                            2, 1, 1, 1, 2, 1, 2, 3, 2, 2, 2, 3, 3, 3, 2, 2};
+
+static uint8_t rand2[64] = {2,  7,  7, 1,  7, 6,  9,  12, 4,  6,  12, 3,  4,
+                            5,  6,  4, 2,  5, 7,  7,  15, 12, 1,  9,  12, 2,
+                            4,  1,  7, 11, 4, 15, 5,  9,  9,  10, 12, 4,  11,
+                            11, 12, 5, 1,  1, 4,  10, 12, 15, 13, 16, 15, 13,
+                            7,  10, 5, 10, 3, 13, 5,  7,  13, 10, 1,  14};
+
 struct ChunkSection *generate_chunk_section(uint8_t *heightmap,
                                             int32_t chunk_y) {
   struct ChunkSection *chunk_section = enif_alloc(sizeof(struct ChunkSection));
@@ -11,8 +22,37 @@ struct ChunkSection *generate_chunk_section(uint8_t *heightmap,
     for (uint32_t z = 0; z < 16; z++) {
       for (uint32_t x = 0; x < 16; x++) {
         size_t block_number = (((y * 16) + z) * 16) + x;
-        chunk_section->blocks[block_number].type =
-            (block_y <= heightmap[z * 16 + x]) ? MC_GRASS : 0;
+        uint8_t m = rand1[(x * 16 + z + heightmap[z * 16 + x]) % 64];
+        uint8_t n = rand2[(x * 16 + block_y + z + heightmap[x * 16 + z]) % 64];
+        uint16_t type;
+        if (block_y == m) {
+          type = MC_BEDROCK;
+        } else if (block_y < (uint8_t)(heightmap[z * 16 + x] - m)) {
+          type = MC_STONE;
+        } else if (block_y < heightmap[z * 16 + x]) {
+          if (block_y < 64) {
+            type = MC_SAND;
+          } else {
+            type = MC_DIRT;
+          }
+        } else if (block_y == heightmap[z * 16 + x]) {
+          if (block_y < 64) {
+            type = MC_SAND;
+          } else {
+            type = MC_GRASS;
+          }
+        } else if (block_y < 64) {
+          type = MC_STILL_WATER;
+        } else if (block_y == (unsigned)heightmap[z * 16 + x] + 1 && n > 13) {
+          if (block_y == 64) {
+            type = MC_AIR;
+          } else {
+            type = MC_TALL_GRASS;
+          }
+        } else {
+          type = MC_AIR;
+        }
+        chunk_section->blocks[block_number].type = type;
         chunk_section->blocks[block_number].block_light = 0;
         chunk_section->blocks[block_number].sky_light = 0xF;
       }

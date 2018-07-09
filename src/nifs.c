@@ -8,6 +8,8 @@
 #include "erl_nif.h"
 #include "perlin.h"
 
+#define max(X, Y) (((X) > (Y)) ? (X) : (Y))
+
 static ErlNifResourceType *CHUNK_RES_TYPE;
 
 static ERL_NIF_TERM set_random_seed(ErlNifEnv *env, int argc,
@@ -90,9 +92,7 @@ static ERL_NIF_TERM generate_chunk(ErlNifEnv *env, int argc,
   for (size_t i = 0; i < 16; z++, i++) {
     x = start_x;
     for (size_t j = 0; j < 16; x++, j++) {
-      unsigned h = 100 * octave_perlin(x + 8888888.483, 28.237, z + 8888888.483,
-                                       1, 0.4) +
-                   32;
+      unsigned h = 125 * octave_perlin(x + 0.483, 28.237, z + 0.483, 6, 0.4);
       if (h > 255) h = 255;
       if (h > max_height) max_height = h;
       heightmap[i * 16 + j] = (uint8_t)h;
@@ -100,7 +100,7 @@ static ERL_NIF_TERM generate_chunk(ErlNifEnv *env, int argc,
   }
 
   // Figure out how many chunk sections we need to output
-  uint8_t num_chunk_sections = (uint8_t)ceil((max_height + 1) / 16.0);
+  uint8_t num_chunk_sections = max(4, (uint8_t)ceil((max_height + 1) / 16.0));
   chunk->num_sections = num_chunk_sections;
 
   for (uint8_t i = 0; i < num_chunk_sections; i++) {

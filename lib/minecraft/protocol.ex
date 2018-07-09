@@ -24,6 +24,10 @@ defmodule Minecraft.Protocol do
     GenServer.call(pid, {:send_packet, packet})
   end
 
+  def get_conn(pid) do
+    GenServer.call(pid, :get_conn)
+  end
+
   #
   # Server Callbacks
   #
@@ -53,6 +57,10 @@ defmodule Minecraft.Protocol do
   def handle_call({:send_packet, packet}, _from, conn) do
     conn = Connection.send_packet(conn, packet)
     {:reply, :ok, conn}
+  end
+
+  def handle_call(:get_conn, _from, conn) do
+    {:reply, conn, conn}
   end
 
   #
