@@ -57,4 +57,13 @@ defmodule Minecraft.NIF do
     # Don't raise here, or Dialyzer complains
     :erlang.nif_error("NIF num_chunk_sections/1 not implemented")
   end
+
+  @doc """
+  Gets the biome data for a chunk.
+  """
+  @spec chunk_biome_data(any) :: {:ok, binary} | :error
+  def chunk_biome_data(_chunk) do
+    # Don't raise here, or Dialyzer complains
+    :erlang.nif_error("NIF chunk_biome_data/1 not implemented")
+  end
 end

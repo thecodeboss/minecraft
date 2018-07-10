@@ -20,4 +20,9 @@ defmodule Minecraft.Chunk do
     {:ok, num_sections} = Minecraft.NIF.num_chunk_sections(resource)
     num_sections
   end
+
+  def get_biome_data(%__MODULE__{resource: resource} = _chunk) do
+    {:ok, biome_data} = Minecraft.NIF.chunk_biome_data(resource)
+    biome_data
+  end
 end

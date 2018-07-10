@@ -136,4 +136,12 @@ defmodule Minecraft.Protocol.Handler do
     # TODO: Should kick client if we don't get one of these for 30 seconds
     {:ok, :noreply, conn}
   end
+
+  def handle(nil, conn) do
+    {:ok, :noreply, conn}
+  end
+
+  def handle({:error, _}, conn) do
+    {:ok, :noreply, conn}
+  end
 end

@@ -3,9 +3,6 @@ defmodule Minecraft.Packet.Server.Play.ChunkData do
   import Bitwise
   import Minecraft.Packet, only: [encode_bool: 1, encode_varint: 1]
 
-  @void 127
-  @biomes String.duplicate(<<@void>>, 256)
-
   defstruct packet_id: 0x20,
             chunk_x: nil,
             chunk_z: nil,
@@ -29,9 +26,10 @@ defmodule Minecraft.Packet.Server.Play.ChunkData do
   def serialize(%__MODULE__{} = packet) do
     data = Minecraft.Chunk.serialize(packet.chunk)
     num_sections = Minecraft.Chunk.num_sections(packet.chunk)
+    biomes = Minecraft.Chunk.get_biome_data(packet.chunk)
     primary_bit_mask = 0xFFFF >>> (16 - num_sections)
     primary_bit_mask = encode_varint(primary_bit_mask)
-    data = IO.iodata_to_binary([data, @biomes])
+    data = IO.iodata_to_binary([data, biomes])
     size = encode_varint(byte_size(data))
 
     res =

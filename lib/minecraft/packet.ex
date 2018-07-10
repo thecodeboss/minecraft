@@ -50,7 +50,7 @@ defmodule Minecraft.Packet do
         {packet, rest}
 
       error ->
-        error
+        {error, rest}
     end
   end
 

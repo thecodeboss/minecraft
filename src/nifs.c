@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "biome.h"
 #include "chunk.h"
 #include "erl_nif.h"
 #include "perlin.h"
@@ -68,6 +69,21 @@ static ERL_NIF_TERM num_chunk_sections(ErlNifEnv *env, int argc,
                           enif_make_int(env, chunk->num_sections));
 }
 
+static ERL_NIF_TERM chunk_biome_data(ErlNifEnv *env, int argc,
+                                     const ERL_NIF_TERM argv[]) {
+  (void)argc;
+  struct Chunk *chunk = NULL;
+  if (!enif_get_resource(env, argv[0], CHUNK_RES_TYPE, (void **)&chunk)) {
+    return enif_make_atom(env, "error");
+  }
+
+  ERL_NIF_TERM term;
+  uint8_t *biome_data = enif_make_new_binary(env, 256, &term);
+  memcpy(biome_data, chunk->biome, 256);
+
+  return enif_make_tuple2(env, enif_make_atom(env, "ok"), term);
+}
+
 static ERL_NIF_TERM generate_chunk(ErlNifEnv *env, int argc,
                                    const ERL_NIF_TERM argv[]) {
   (void)argc;
@@ -80,9 +96,11 @@ static ERL_NIF_TERM generate_chunk(ErlNifEnv *env, int argc,
       enif_alloc_resource(CHUNK_RES_TYPE, sizeof(struct Chunk));
   ERL_NIF_TERM chunk_term = enif_make_resource(env, chunk);
   uint8_t *heightmap = (uint8_t *)enif_alloc(sizeof(uint8_t) * 16 * 16);
+  uint8_t *biome = (uint8_t *)enif_alloc(sizeof(uint8_t) * 16 * 16);
   chunk->x = chunk_x;
   chunk->z = chunk_z;
   chunk->heightmap = heightmap;
+  chunk->biome = biome;
 
   double start_x = chunk_x * 16.0;
   double start_z = chunk_z * 16.0;
@@ -96,6 +114,7 @@ static ERL_NIF_TERM generate_chunk(ErlNifEnv *env, int argc,
       if (h > 255) h = 255;
       if (h > max_height) max_height = h;
       heightmap[i * 16 + j] = (uint8_t)h;
+      biome[i * 16 + j] = get_biome(x, z);
     }
   }
 
@@ -120,6 +139,7 @@ void chunk_res_destructor(ErlNifEnv *env, void *resource) {
   (void)env;
   struct Chunk *chunk = (struct Chunk *)resource;
   enif_free((void *)chunk->heightmap);
+  enif_free((void *)chunk->biome);
   for (uint8_t i = 0; i < chunk->num_sections; i++) {
     enif_free((void *)chunk->chunk_sections[i]);
   }
@@ -139,6 +159,7 @@ int nif_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info) {
 
 static ErlNifFunc nif_funcs[] = {
     // {erl_function_name, erl_function_arity, c_function, flags}
+    {"chunk_biome_data", 1, chunk_biome_data, 0},
     {"generate_chunk", 2, generate_chunk, 0},
     {"get_chunk_coordinates", 1, get_chunk_coordinates, 0},
     {"num_chunk_sections", 1, num_chunk_sections, 0},

@@ -33,6 +33,7 @@ struct Chunk {
   int32_t x;
   int32_t z;
   uint8_t *heightmap;
+  uint8_t *biome;
   uint8_t num_sections;
   struct ChunkSection *chunk_sections[16];
 };

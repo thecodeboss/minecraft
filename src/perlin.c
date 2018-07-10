@@ -3,12 +3,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int p[512];
+int p[512];
+int p2[512];
 
 void initialize_random(unsigned seed) {
   srand(seed);
   for (unsigned i = 0; i < 512; i++) {
     p[i] = rand() % 256;
+    p2[i] = rand() % 4096;
   }
 }
 
@@ -57,7 +59,7 @@ static double grad(int hash, double x, double y, double z) {
   }
 }
 
-static int xorhash(int value) {
+int xorhash(int value) {
   return (value & 0xFF) ^ ((value >> 8) & 0xFF) ^ ((value >> 16) & 0xFF);
 }
 

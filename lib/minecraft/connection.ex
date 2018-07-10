@@ -210,12 +210,12 @@ defmodule Minecraft.Connection do
         Logger.debug(fn -> "RECV: #{inspect(packet)}" end)
         {:ok, packet, %__MODULE__{conn | data: rest}}
 
-      {:error, :invalid_packet} ->
+      {{:error, :invalid_packet}, rest} ->
         Logger.error(fn ->
           "Received an invalid packet from client, closing connection. #{inspect(conn.data)}"
         end)
 
-        {:error, put_error(conn, :invalid_packet)}
+        {:ok, nil, %__MODULE__{conn | data: rest}}
     end
   end
 

@@ -42,9 +42,17 @@ defmodule Minecraft.StateMachine do
     conn = Protocol.get_conn(protocol)
     :ok = Minecraft.Users.join(conn.assigns[:uuid], conn.assigns[:username])
 
-    :ok = Protocol.send_packet(protocol, %Server.Play.JoinGame{entity_id: 123})
+    :ok =
+      Protocol.send_packet(protocol, %Server.Play.JoinGame{entity_id: 123, game_mode: :creative})
+
     :ok = Protocol.send_packet(protocol, %Server.Play.SpawnPosition{position: {0, 200, 0}})
-    :ok = Protocol.send_packet(protocol, %Server.Play.PlayerAbilities{})
+
+    :ok =
+      Protocol.send_packet(protocol, %Server.Play.PlayerAbilities{
+        creative_mode: true,
+        allow_flying: true,
+        flying_speed: 0.1
+      })
 
     :ok =
       Protocol.send_packet(protocol, %Server.Play.PlayerPositionAndLook{
