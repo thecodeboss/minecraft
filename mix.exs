@@ -60,7 +60,7 @@ defmodule Minecraft.MixProject do
       {:httpoison, "~> 1.2"},
       {:inch_ex, only: :docs},
       {:mock, "~> 0.3.0", only: :test},
-      {:ranch, "~> 1.5"},
+      {:ranch, "~> 2.0"},
       {:poison, "~> 4.0"}
     ]
   end
