@@ -61,7 +61,7 @@ defmodule Minecraft.MixProject do
       {:inch_ex, only: :docs},
       {:mock, "~> 0.3.0", only: :test},
       {:ranch, "~> 2.1"},
-      {:poison, "~> 5.0"}
+      {:poison, "~> 6.0"}
     ]
   end
 
